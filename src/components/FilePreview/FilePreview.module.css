@@ -1,0 +1,67 @@
+.row {
+  display:   flex;
+  flex-wrap: wrap;
+  gap:       6px;
+}
+
+.chip {
+  display:       flex;
+  align-items:   center;
+  gap:           7px;
+  padding:       5px 8px 5px 6px;
+  background:    var(--ailcl-surface-2);
+  border:        1px solid var(--ailcl-border);
+  border-radius: var(--ailcl-radius-xs);
+  font-size:     12px;
+  max-width:     200px;
+}
+
+.thumb {
+  width:         28px;
+  height:        28px;
+  object-fit:    cover;
+  border-radius: 3px;
+  flex-shrink:   0;
+}
+
+.icon {
+  font-size:   18px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.info {
+  display:        flex;
+  flex-direction: column;
+  gap:            1px;
+  overflow:       hidden;
+  min-width:      0;
+}
+
+.name {
+  font-size:      12px;
+  font-weight:    500;
+  color:          var(--ailcl-text-primary);
+  white-space:    nowrap;
+  overflow:       hidden;
+  text-overflow:  ellipsis;
+}
+
+.size {
+  font-size: 10px;
+  color:     var(--ailcl-text-muted);
+}
+
+.remove {
+  background:  none;
+  border:      none;
+  color:       var(--ailcl-text-muted);
+  cursor:      pointer;
+  font-size:   15px;
+  line-height: 1;
+  padding:     0 0 0 4px;
+  margin-left: auto;
+  flex-shrink: 0;
+  transition:  color var(--ailcl-transition);
+}
+.remove:hover { color: var(--ailcl-error); }

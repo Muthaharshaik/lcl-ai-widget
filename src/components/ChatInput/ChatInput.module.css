@@ -1,0 +1,133 @@
+.area {
+  padding:    12px 14px 8px;
+  background: var(--ailcl-bg);
+}
+.areaDisabled { opacity: 0.7; }
+
+/* ── File errors ─────────────────────────────────────────────────────── */
+.errors {
+  display:       flex;
+  align-items:   center;
+  gap:           8px;
+  flex-wrap:     wrap;
+  padding:       6px 10px;
+  background:    var(--ailcl-error-bg);
+  border:        1px solid var(--ailcl-error-border);
+  border-radius: var(--ailcl-radius-xs);
+  margin-bottom: 8px;
+  font-size:     12px;
+}
+.errorMsg     { color: var(--ailcl-error); }
+.dismissBtn   {
+  margin-left: auto;
+  background:  none;
+  border:      none;
+  color:       var(--ailcl-error);
+  cursor:      pointer;
+  font-size:   16px;
+  line-height: 1;
+  padding:     0;
+  flex-shrink: 0;
+}
+
+/* ── Staged files ────────────────────────────────────────────────────── */
+.stagedFiles {
+  padding-bottom: 8px;
+  border-bottom:  1px solid var(--ailcl-border);
+  margin-bottom:  8px;
+}
+
+/* ── Input row ───────────────────────────────────────────────────────── */
+.row {
+  display:     flex;
+  align-items: flex-end;
+  gap:         8px;
+  background:  var(--ailcl-surface);
+  border:      1.5px solid var(--ailcl-border);
+  border-radius: var(--ailcl-radius-sm);
+  padding:     6px 8px;
+  transition:  border-color var(--ailcl-transition), box-shadow var(--ailcl-transition);
+}
+.row:focus-within {
+  border-color: var(--ailcl-primary);
+  box-shadow:   var(--ailcl-shadow-input);
+}
+
+/* ── Textarea ────────────────────────────────────────────────────────── */
+.textarea {
+  flex:        1;
+  border:      none;
+  outline:     none;
+  background:  transparent;
+  resize:      none;
+  font-family: var(--ailcl-font);
+  font-size:   14px;
+  line-height: 1.5;
+  color:       var(--ailcl-text-primary);
+  padding:     4px 0;
+  min-height:  28px;
+  max-height:  180px;
+  overflow-y:  auto;
+}
+.textarea::placeholder { color: var(--ailcl-text-muted); }
+.textarea:disabled     { cursor: not-allowed; }
+
+/* ── Buttons ─────────────────────────────────────────────────────────── */
+.sendBtn,
+.attachBtn {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  width:           34px;
+  height:          34px;
+  border:          none;
+  border-radius:   var(--ailcl-radius-xs);
+  cursor:          pointer;
+  flex-shrink:     0;
+  transition:      background var(--ailcl-transition), color var(--ailcl-transition),
+                   transform var(--ailcl-transition);
+}
+.sendBtn {
+  background: var(--ailcl-primary);
+  color:      var(--ailcl-primary-text);
+}
+.sendBtn svg  { width: 16px; height: 16px; }
+.sendBtn:hover:not(:disabled) {
+  background: var(--ailcl-primary-hover);
+  transform:  translateY(-1px);
+}
+.sendBtn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.cancelBtn { background: var(--ailcl-error); color: #fff; }
+.cancelBtn:hover { background: #dc2626; transform: translateY(-1px); }
+
+.attachBtn {
+  background: transparent;
+  color:      var(--ailcl-text-muted);
+}
+.attachBtn svg     { width: 18px; height: 18px; }
+.attachBtn:hover:not(:disabled) {
+  background: var(--ailcl-surface-2);
+  color:      var(--ailcl-text-primary);
+}
+.attachBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.hiddenInput { display: none; }
+
+/* ── Keyboard hint ───────────────────────────────────────────────────── */
+.hint {
+  margin:      5px 0 0;
+  font-size:   11px;
+  color:       var(--ailcl-text-muted);
+  text-align:  center;
+}
+.hint kbd {
+  display:       inline-block;
+  padding:       1px 5px;
+  border:        1px solid var(--ailcl-border);
+  border-radius: 3px;
+  font-family:   var(--ailcl-mono);
+  font-size:     10px;
+  background:    var(--ailcl-surface-2);
+  color:         var(--ailcl-text-secondary);
+}

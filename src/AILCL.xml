@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<widget id="lowcodelabs.ailcl.AILCL" pluginWidget="true" needsEntityContext="true" offlineCapable="true"
+        supportedPlatform="Web"
+        xmlns="http://www.mendix.com/widget/1.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.mendix.com/widget/1.0/ ../node_modules/mendix/custom_widget.xsd">
+    <name>AILCL</name>
+    <description>AI Chat Widget</description>
+    <icon/>
+  <properties>
+
+    <!-- ══ API Configuration ═════════════════════════════════════════════ -->
+    <propertyGroup caption="API Configuration">
+      <property key="apiUrl" type="string" required="true" defaultValue="">
+        <caption>API URL</caption>
+        <description>Backend AI API endpoint (e.g. your Lambda URL)</description>
+      </property>
+    </propertyGroup>
+
+    <!-- ══ UI Configuration ══════════════════════════════════════════════ -->
+    <propertyGroup caption="UI Configuration">
+      <property key="title" type="string" required="false" defaultValue="AI Assistant">
+        <caption>Widget Title</caption>
+        <description>Title shown in the chat header</description>
+      </property>
+      <property key="placeholder" type="string" required="false" defaultValue="Type your message...">
+        <caption>Input Placeholder</caption>
+        <description>Placeholder text for the message input</description>
+      </property>
+      <property key="maxHeight" type="string" required="false" defaultValue="600px">
+        <caption>Max Height</caption>
+        <description>Max height of the chat window (e.g. 600px, 80vh)</description>
+      </property>
+      <property key="theme" type="enumeration" defaultValue="light">
+        <caption>Theme</caption>
+        <description>Colour theme</description>
+        <enumerationValues>
+          <enumerationValue key="light">Light</enumerationValue>
+          <enumerationValue key="dark">Dark</enumerationValue>
+          <enumerationValue key="auto">Auto (System)</enumerationValue>
+        </enumerationValues>
+      </property>
+    </propertyGroup>
+
+    <!-- ══ Features ══════════════════════════════════════════════════════ -->
+    <propertyGroup caption="Features">
+      <property key="allowMarkdown" type="boolean" defaultValue="true">
+        <caption>Render Markdown</caption>
+        <description>Render AI responses as rich Markdown (tables, code, lists)</description>
+      </property>
+      <property key="showCopyButton" type="boolean" defaultValue="true">
+        <caption>Show Copy Button</caption>
+        <description>Show copy-to-clipboard button on AI messages</description>
+      </property>
+      <property key="enableTypingAnimation" type="boolean" defaultValue="true">
+        <caption>Typing Animation</caption>
+        <description>Show animated typing indicator while waiting for response</description>
+      </property>
+      <property key="allowFileUpload" type="boolean" defaultValue="false">
+        <caption>Allow File Upload</caption>
+        <description>Enable users to attach files to messages</description>
+      </property>
+      <property key="acceptedFileTypes" type="string" required="false"
+        defaultValue=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.csv,.xlsx">
+        <caption>Accepted File Types</caption>
+        <description>Comma-separated file extensions (only used when file upload is enabled)</description>
+      </property>
+      <property key="maxFileSizeMB" type="integer" defaultValue="10">
+        <caption>Max File Size (MB)</caption>
+        <description>Maximum file size per attachment in megabytes</description>
+      </property>
+    </propertyGroup>
+
+    <!-- ══ Behaviour ═════════════════════════════════════════════════════ -->
+    <propertyGroup caption="Behaviour">
+      <property key="disabled" type="boolean" defaultValue="false">
+        <caption>Disabled</caption>
+        <description>Disable the chat input (can be driven by Mendix expression)</description>
+      </property>
+      <property key="autoScroll" type="boolean" defaultValue="true">
+        <caption>Auto Scroll</caption>
+        <description>Automatically scroll to the latest message</description>
+      </property>
+    </propertyGroup>
+
+  </properties>
+</widget>

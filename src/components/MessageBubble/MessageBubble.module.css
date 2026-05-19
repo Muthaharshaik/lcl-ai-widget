@@ -1,0 +1,170 @@
+/* ── Wrapper (row) ───────────────────────────────────────────────────── */
+.wrapper {
+  display:     flex;
+  gap:         10px;
+  align-items: flex-end;
+  padding:     6px 0;
+  animation:   fadeSlideIn 0.22s ease both;
+}
+.userWrapper      { flex-direction: row-reverse; }
+.assistantWrapper { flex-direction: row; }
+.errorWrapper .bubble { opacity: 0.8; }
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Avatar ─────────────────────────────────────────────────────────── */
+.avatar     { flex-shrink: 0; width: 32px; height: 32px; }
+.avatarAi {
+  width:           32px;
+  height:          32px;
+  border-radius:   50%;
+  background:      var(--ailcl-avatar-ai-bg);
+  color:           var(--ailcl-avatar-ai-color);
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+}
+.avatarAi svg   { width: 16px; height: 16px; }
+.avatarUser {
+  width:           32px;
+  height:          32px;
+  border-radius:   50%;
+  background:      var(--ailcl-avatar-user-bg);
+  color:           var(--ailcl-avatar-user-text);
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  font-size:       13px;
+  font-weight:     700;
+}
+
+/* ── Bubble group ────────────────────────────────────────────────────── */
+.group {
+  display:        flex;
+  flex-direction: column;
+  gap:            4px;
+  max-width:      72%;
+  min-width:      0;
+}
+.userWrapper .group   { align-items: flex-end; }
+.assistantWrapper .group { align-items: flex-start; }
+
+/* ── Bubble ─────────────────────────────────────────────────────────── */
+.bubble {
+  padding:       10px 14px;
+  border-radius: var(--ailcl-radius-sm);
+  line-height:   1.6;
+  word-break:    break-word;
+  font-size:     14px;
+}
+.userBubble {
+  background:         var(--ailcl-user-bg);
+  color:              var(--ailcl-user-text);
+  border-bottom-right-radius: 4px;
+}
+.aiBubble {
+  background:         var(--ailcl-ai-bg);
+  color:              var(--ailcl-ai-text);
+  border-bottom-left-radius: 4px;
+}
+.text { margin: 0; white-space: pre-wrap; }
+
+/* ── Error badge ─────────────────────────────────────────────────────── */
+.errorBadge {
+  font-size:  12px;
+  color:      var(--ailcl-error);
+  padding:    2px 0;
+}
+
+/* ── Meta row ────────────────────────────────────────────────────────── */
+.meta {
+  display:     flex;
+  align-items: center;
+  gap:         6px;
+  padding:     0 2px;
+}
+.userWrapper .meta { flex-direction: row-reverse; }
+.timestamp {
+  font-size: 11px;
+  color:     var(--ailcl-text-muted);
+}
+
+/* ── Markdown body ───────────────────────────────────────────────────── */
+.markdown { font-size: 14px; line-height: 1.7; color: var(--ailcl-ai-text); }
+.markdown p  { margin: 0 0 10px; }
+.markdown p:last-child { margin-bottom: 0; }
+.markdown h1,.markdown h2,.markdown h3 {
+  font-weight: 600;
+  margin: 14px 0 6px;
+  color: var(--ailcl-text-primary);
+}
+.markdown h1 { font-size: 18px; }
+.markdown h2 { font-size: 16px; }
+.markdown h3 { font-size: 14px; }
+.markdown ul,.markdown ol { padding-left: 20px; margin: 6px 0 10px; }
+.markdown li { margin-bottom: 4px; }
+.markdown strong { font-weight: 600; }
+.markdown em     { font-style: italic; }
+.markdown blockquote {
+  border-left:  3px solid var(--ailcl-primary);
+  margin:       8px 0;
+  padding:      4px 12px;
+  color:        var(--ailcl-text-secondary);
+  font-style:   italic;
+}
+.markdown table {
+  border-collapse: collapse;
+  width:           100%;
+  margin:          10px 0;
+  font-size:       13px;
+}
+.markdown th {
+  background:  var(--ailcl-surface-2);
+  padding:     6px 10px;
+  text-align:  left;
+  font-weight: 600;
+  border:      1px solid var(--ailcl-border);
+}
+.markdown td {
+  padding: 6px 10px;
+  border:  1px solid var(--ailcl-border);
+}
+.markdown a {
+  color:           var(--ailcl-primary);
+  text-decoration: underline;
+}
+
+/* ── Inline code ─────────────────────────────────────────────────────── */
+.inlineCode {
+  font-family:  var(--ailcl-mono);
+  font-size:    12.5px;
+  background:   var(--ailcl-surface-2);
+  padding:      2px 6px;
+  border-radius: var(--ailcl-radius-xs);
+  color:        var(--ailcl-text-primary);
+  border:       1px solid var(--ailcl-border);
+}
+
+/* ── Code block ─────────────────────────────────────────────────────── */
+.codeBlock {
+  border-radius: var(--ailcl-radius-sm);
+  overflow:      hidden;
+  margin:        8px 0;
+  border:        1px solid rgba(255,255,255,0.06);
+}
+.codeHeader {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  padding:         6px 12px;
+  background:      #1a1b26;
+}
+.codeLang {
+  font-size:   11px;
+  font-family: var(--ailcl-mono);
+  color:       #9aa5ce;
+  text-transform: lowercase;
+}

@@ -1,0 +1,107 @@
+.container {
+  display:        flex;
+  flex-direction: column;
+  height:         var(--chat-max-height, 600px);
+  max-height:     var(--chat-max-height, 600px);
+  background:     var(--ailcl-bg);
+  border:         1px solid var(--ailcl-border);
+  border-radius:  var(--ailcl-radius);
+  box-shadow:     var(--ailcl-shadow);
+  font-family:    var(--ailcl-font);
+  overflow:       hidden;
+  position:       relative;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────── */
+.header {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  padding:         14px 18px;
+  background:      var( --ailcl-primary-lcl);
+  border-bottom:   1px solid var(--ailcl-border);
+  flex-shrink:     0;
+}
+
+.headerLeft {
+  display:     flex;
+  align-items: center;
+  gap:         10px;
+}
+
+.onlineDot {
+  width:         8px;
+  height:        8px;
+  border-radius: 50%;
+  background:    #22c55e;
+  box-shadow:    0 0 0 2px rgba(34, 197, 94, 0.25);
+  animation:     pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25); }
+  50%       { box-shadow: 0 0 0 5px rgba(34, 197, 94, 0.08); }
+}
+
+.title {
+  font-size:   bold;
+  font-weight: 600;
+  color:       #ffffff;
+  margin:      0;
+  line-height: 1;
+}
+
+.clearBtn {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  width:           32px;
+  height:          32px;
+  border:          none;
+  border-radius:   var(--ailcl-radius-xs);
+  background:      transparent;
+  color:           var(--ailcl-text-muted);
+  cursor:          pointer;
+  transition:      background var(--ailcl-transition), color var(--ailcl-transition);
+}
+.clearBtn svg     { width: 15px; height: 15px; }
+.clearBtn:hover   { background: var(--ailcl-error-bg); color: var(--ailcl-error); }
+.clearBtn:disabled{ opacity: 0.35; cursor: not-allowed; }
+
+/* ── Error banner ────────────────────────────────────────────────────── */
+.errorBanner {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  padding:         10px 16px;
+  background:      var(--ailcl-error-bg);
+  border-bottom:   1px solid var(--ailcl-error-border);
+  color:           var(--ailcl-error);
+  font-size:       13px;
+  flex-shrink:     0;
+  gap:             8px;
+}
+.errorBanner button {
+  background: none;
+  border:     none;
+  color:      var(--ailcl-error);
+  cursor:     pointer;
+  font-size:  18px;
+  line-height: 1;
+  padding:    0 4px;
+  flex-shrink: 0;
+}
+
+/* ── Messages + Footer ───────────────────────────────────────────────── */
+.messages {
+  flex:       1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;  /* critical for flex child scrolling */
+}
+
+.footer {
+  flex-shrink:  0;
+  border-top:   1px solid var(--ailcl-border);
+  background:   var(--ailcl-bg);
+}
