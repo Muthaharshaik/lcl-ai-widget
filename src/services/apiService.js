@@ -10,8 +10,12 @@ export class ApiError extends Error {
   }
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-const delay = (ms) => new Promise((res) => setTimeout(res, ms));
+const delay    = (ms) => new Promise((res) => setTimeout(res, ms));
+const debugLog = (label, value) => {
+  if (process.env.NODE_ENV !== 'production') {
+    console.debug(`[AILCL] ${label}`, value);
+  }
+};
 
 const mergeSignals = (signals) => {
   const controller = new AbortController();
@@ -20,12 +24,6 @@ const mergeSignals = (signals) => {
     signal?.addEventListener('abort', () => controller.abort(), { once: true });
   }
   return controller.signal;
-};
-
-const debugLog = (label, value) => {
-  if (process.env.NODE_ENV !== 'production') {
-    console.debug(`[AILCL] ${label}`, value);
-  }
 };
 
 // ─── Content coercion ─────────────────────────────────────────────────────────
@@ -52,343 +50,530 @@ const contentToString = (content) => {
 };
 
 // ─── History builder ──────────────────────────────────────────────────────────
+// When an assistant message has an artifact, we re-attach the code (with its
+// original markers) so the Lambda can see and modify it on follow-up requests.
+// Without this, asking "add more slides" loses all context of the previous PPT.
+const ARTIFACT_MARKERS = {
+  pptx:     (code, title) =>
+    `[EXISTING PRESENTATION — MODIFY THIS CODE, do not generate a new one]\n` +
+    `%%PPT_CODE_START%%\n${code}\n%%PPT_CODE_END%%`,
+  docx:     (code, title) =>
+    `[EXISTING WORD DOCUMENT — MODIFY THIS CODE, do not generate a new one]\n` +
+    `%%DOCX_CODE_START%%\n${code}\n%%DOCX_CODE_END%%`,
+  document: (code, title) =>
+    `[EXISTING HTML DOCUMENT — MODIFY THIS CODE, do not generate a new one]\n` +
+    `%%DOC_START%%\n${code}\n%%DOC_END%%`,
+  html:     (code, title) =>
+    `[EXISTING CODE ARTIFACT — MODIFY THIS CODE, do not generate a new one]\n` +
+    `%%ARTIFACT_START%%\n${JSON.stringify({ type: 'html', title: title || 'Artifact' })}\n${code}\n%%ARTIFACT_END%%`,
+};
+
 const buildApiHistory = (messages) =>
   messages
     .filter((m) => m.status !== 'error')
-    .map((m) => ({
-      role:    m.role,
-      content: [{ type: 'text', text: contentToString(m.content) }],
-    }));
+    .map((m) => {
+      let text = contentToString(m.content);
 
-// ─── File utilities ───────────────────────────────────────────────────────────
-const fileToBase64 = (file) =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload  = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = () => reject(new Error(`Failed to read file: ${file.name}`));
-    reader.readAsDataURL(file);
+      // Re-attach artifact code for assistant messages so the Lambda
+      // can reference and modify previously generated artifacts
+      if (m.role === 'assistant' && m.artifact?.code) {
+        const type    = m.artifact.type || 'html';
+        const marker  = ARTIFACT_MARKERS[type] || ARTIFACT_MARKERS.html;
+        const block   = marker(m.artifact.code, m.artifact.title);
+        text = text ? `${text}\n\n${block}` : block;
+      }
+
+      return {
+        role:    m.role,
+        content: [{ type: 'text', text }],
+      };
+    });
+
+// ─── AWS SigV4 helpers ────────────────────────────────────────────────────────
+async function sha256hex(message) {
+  const msgBuffer  = typeof message === 'string' ? new TextEncoder().encode(message) : message;
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function hmacSha256(keyData, message) {
+  const keyMaterial = typeof keyData === 'string' ? new TextEncoder().encode(keyData) : keyData;
+  const key = await crypto.subtle.importKey('raw', keyMaterial, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const msgBuffer = typeof message === 'string' ? new TextEncoder().encode(message) : message;
+  return crypto.subtle.sign('HMAC', key, msgBuffer);
+}
+
+async function getSigningKey(secretKey, dateStamp, region, service) {
+  const kDate    = await hmacSha256('AWS4' + secretKey, dateStamp);
+  const kRegion  = await hmacSha256(kDate, region);
+  const kService = await hmacSha256(kRegion, service);
+  return hmacSha256(kService, 'aws4_request');
+}
+
+async function hmacSha256hex(keyData, message) {
+  const sig = await hmacSha256(keyData, message);
+  return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function sanitizeFileName(fileName) {
+  const lastDot  = fileName.lastIndexOf('.');
+  const ext      = lastDot > -1 ? fileName.slice(lastDot) : '';
+  const baseName = lastDot > -1 ? fileName.slice(0, lastDot) : fileName;
+  return baseName
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9._-]/g, '-')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-|-$/g, '') + ext;
+}
+
+function sigV4EncodeUri(s3Key) {
+  return s3Key.split('/').map(segment =>
+    encodeURIComponent(segment)
+      .replace(/[!'()*]/g, c => '%' + c.charCodeAt(0).toString(16).toUpperCase())
+  ).join('/');
+}
+
+async function uploadFileToS3(file, s3Config) {
+  const { bucket, region, keyPrefix, accessKey, secretKey } = s3Config;
+  if (!bucket || !accessKey || !secretKey) {
+    throw new ApiError('S3 not configured — set s3Bucket, awsAccessKey, awsSecretKey in widget properties', 0, '');
+  }
+
+  const safeFileName = sanitizeFileName(file.name);
+  const s3Key        = `${keyPrefix || 'attachements-input'}/${Date.now()}_${safeFileName}`;
+  const host         = `${bucket}.s3.${region}.amazonaws.com`;
+  const url          = `https://${host}/${s3Key}`;
+
+  const now         = new Date();
+  const amzDate     = now.toISOString().replace(/[:-]|\.\d{3}/g, '').slice(0, 15) + 'Z';
+  const dateStamp   = amzDate.slice(0, 8);
+  const fileBuffer  = await file.arrayBuffer();
+  const payloadHash = await sha256hex(fileBuffer);
+
+  const canonicalUri     = '/' + sigV4EncodeUri(s3Key);
+  const canonicalHeaders =
+    `content-type:${file.type}\nhost:${host}\nx-amz-content-sha256:${payloadHash}\nx-amz-date:${amzDate}\n`;
+  const signedHeaders    = 'content-type;host;x-amz-content-sha256;x-amz-date';
+  const canonicalRequest = ['PUT', canonicalUri, '', canonicalHeaders, signedHeaders, payloadHash].join('\n');
+
+  const credentialScope  = `${dateStamp}/${region}/s3/aws4_request`;
+  const canonicalReqHash = await sha256hex(canonicalRequest);
+  const stringToSign     = ['AWS4-HMAC-SHA256', amzDate, credentialScope, canonicalReqHash].join('\n');
+  const signingKey       = await getSigningKey(secretKey, dateStamp, region, 's3');
+  const signature        = await hmacSha256hex(signingKey, stringToSign);
+  const authorization    =
+    `AWS4-HMAC-SHA256 Credential=${accessKey}/${credentialScope}, ` +
+    `SignedHeaders=${signedHeaders}, Signature=${signature}`;
+
+  await new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', url);
+    xhr.setRequestHeader('Content-Type',          file.type);
+    xhr.setRequestHeader('x-amz-date',            amzDate);
+    xhr.setRequestHeader('x-amz-content-sha256',  payloadHash);
+    xhr.setRequestHeader('Authorization',         authorization);
+    xhr.onload  = () =>
+      (xhr.status >= 200 && xhr.status < 300)
+        ? resolve()
+        : reject(new ApiError(`S3 upload failed: ${xhr.status}`, xhr.status, xhr.responseText));
+    xhr.onerror = () => reject(new ApiError('S3 upload — network error', 0, ''));
+    xhr.send(fileBuffer);
   });
 
-/**
- * Converts File[] into a simple attachments array.
- * Your Lambda receives this and converts to Bedrock format internally.
- */
-const buildAttachments = async (files) =>
-  Promise.all(
-    files.map(async (file) => ({
-      name:     file.name,
-      type:     file.type,
-      size:     file.size,
-      data:     await fileToBase64(file),
-    }))
-  );
+  debugLog('S3 upload success:', s3Key);
+  return s3Key;
+}
 
-// ─── Deduplication ────────────────────────────────────────────────────────────
-/**
- * Detects if a string is exactly doubled and returns the single copy.
- * Handles: "abcabc" → "abc", "abc abc" → "abc", "abc\nabc" → "abc"
- *
- * This fixes Lambdas that send the full response twice in the SSE stream.
- */
-const deduplicateResponse = (str) => {
-  if (!str || str.length < 10) return str;
+async function uploadAllFilesToS3(files, s3Config) {
+  const attachments = [];
+  for (const file of files) {
+    const s3Key = await uploadFileToS3(file, s3Config);
+    attachments.push({ s3Key, fileName: file.name, mimeType: file.type });
+  }
+  return attachments;
+}
 
-  // Check exact double (no separator): "abcabc"
-  const half = str.length / 2;
-  if (Number.isInteger(half) && str.slice(0, half) === str.slice(half)) {
-    debugLog('Deduplicated exact-double response');
-    return str.slice(0, half);
+// ─── Artifact stream parser ───────────────────────────────────────────────────
+class ArtifactStreamParser {
+  constructor({ onChatToken, onArtifactStart, onArtifactCode, onArtifactDone }) {
+    this.onChatToken     = onChatToken     || (() => {});
+    this.onArtifactStart = onArtifactStart || (() => {});
+    this.onArtifactCode  = onArtifactCode  || (() => {});
+    this.onArtifactDone  = onArtifactDone  || (() => {});
+
+    this.buf          = '';
+    this.inArtifact   = false;
+    this.artifactCode = '';
+    this.artifactMeta = null;
+    this.started      = false;
+    this.markerType   = null;
   }
 
-  // Check with common separators: "abc abc", "abc\nabc", "abc\n\nabc"
-  for (const sep of ['\n\n', '\n', ' ']) {
-    const idx = str.indexOf(sep);
-    if (idx > 0) {
-      const first  = str.slice(0, idx);
-      const second = str.slice(idx + sep.length);
-      if (first === second && first.length > 20) {
-        debugLog(`Deduplicated response split by "${sep.replace(/\n/g, '\\n')}"`);
-        return first;
+  push(text) {
+    this.buf += text;
+    this._process();
+  }
+
+  // ── Called when stream ends — finalise any open artifact ─────────────────
+  flush() {
+    if (this.inArtifact && this.artifactCode) {
+      // Stream ended without %%ARTIFACT_END%% — finalise what we have
+      if (!this.started) {
+        this.onArtifactStart(this.artifactMeta?.title || 'Artifact');
       }
+      this.onArtifactDone({
+        type:     this.artifactMeta?.type     || 'html',
+        title:    this.artifactMeta?.title    || 'Artifact',
+        code:     this.artifactCode.trim(),
+        language: this.artifactMeta?.type     || 'html',
+      });
+      this.inArtifact = false;
+    } else if (this.buf.trim()) {
+      // Any leftover chat text
+      this.onChatToken(this.buf);
+      this.buf = '';
     }
   }
 
-  return str;
-};
+  _process() {
+    const MARKERS = {
+      artifact: { start: '%%ARTIFACT_START%%',  end: '%%ARTIFACT_END%%',   hasMeta: true                                      },
+      docx:     { start: '%%DOCX_CODE_START%%',  end: '%%DOCX_CODE_END%%', hasMeta: false, title: 'Word Document', type: 'docx'     },
+      ppt:      { start: '%%PPT_CODE_START%%',   end: '%%PPT_CODE_END%%',  hasMeta: false, title: 'Presentation',  type: 'pptx'     },
+      doc:      { start: '%%DOC_START%%',         end: '%%DOC_END%%',       hasMeta: false, title: 'HTML Document', type: 'document' },
+    };
 
-// ─── SSE parser ───────────────────────────────────────────────────────────────
-const extractFirstString = (obj, depth = 0) => {
-  if (depth > 6) return null;
-  if (typeof obj === 'string' && obj.trim()) return obj;
-  if (Array.isArray(obj)) {
-    for (const item of obj) {
-      const found = extractFirstString(item, depth + 1);
-      if (found !== null) return found;
-    }
-  }
-  if (obj && typeof obj === 'object') {
-    const priority = [
-      'response', 'content', 'text', 'token', 'answer',
-      'message', 'output', 'result', 'reply', 'completion',
-    ];
-    for (const key of priority) {
-      const val = obj[key];
-      if (typeof val === 'string' && val.trim()) return val;
-      if (Array.isArray(val)) {
-        const found = extractFirstString(val, depth + 1);
-        if (found !== null) return found;
-      }
-    }
-    for (const val of Object.values(obj)) {
-      const found = extractFirstString(val, depth + 1);
-      if (found !== null) return found;
-    }
-  }
-  return null;
-};
+    // ── Not inside an artifact yet — scan for a start marker ─────────────────
+    if (!this.inArtifact) {
+      let earliest  = -1;
+      let foundType = null;
 
-const parseSSEText = (rawText) => {
-  debugLog('Raw SSE body:', rawText);
-
-  const lines      = rawText.split('\n');
-  let fullContent  = '';
-
-  /**
-   * KEY FIX: Track every raw data: payload string we've already processed.
-   * If the Lambda sends the same data: line twice, the second is silently skipped.
-   */
-  const seenPayloads = new Set();
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-
-    // Only process data: lines
-    if (!trimmed.startsWith('data:')) continue;
-
-    const payload = trimmed.slice(5).trim();
-    if (!payload || payload === '[DONE]') continue;
-
-    // ── DEDUP: skip if we've already processed this exact payload ────────────
-    if (seenPayloads.has(payload)) {
-      debugLog('SSE duplicate data: line skipped:', payload.slice(0, 60));
-      continue;
-    }
-    seenPayloads.add(payload);
-
-    try {
-      const chunk = JSON.parse(payload);
-      debugLog('SSE chunk:', chunk);
-
-      // Named string fields
-      const named =
-        chunk?.response  ??
-        chunk?.content   ??
-        chunk?.text      ??
-        chunk?.token     ??
-        chunk?.answer    ??
-        chunk?.message   ??
-        chunk?.output    ??
-        chunk?.result    ??
-        chunk?.reply     ??
-        chunk?.completion;
-
-      if (typeof named === 'string') { fullContent += named; continue; }
-
-      // Anthropic content array
-      if (Array.isArray(chunk?.content)) {
-        const str = contentToString(chunk.content);
-        if (str) { fullContent += str; continue; }
+      for (const [type, m] of Object.entries(MARKERS)) {
+        const idx = this.buf.indexOf(m.start);
+        if (idx !== -1 && (earliest === -1 || idx < earliest)) {
+          earliest  = idx;
+          foundType = type;
+        }
       }
 
-      // OpenAI chat delta
-      const delta = chunk?.choices?.[0]?.delta?.content;
-      if (typeof delta === 'string') { fullContent += delta; continue; }
-
-      // OpenAI completions
-      const choiceText = chunk?.choices?.[0]?.text;
-      if (typeof choiceText === 'string') { fullContent += choiceText; continue; }
-
-      // Anthropic streaming delta
-      const anthropicDelta = chunk?.delta?.text ?? chunk?.delta?.content;
-      if (typeof anthropicDelta === 'string') { fullContent += anthropicDelta; continue; }
-
-      // Catch-all
-      const fallback = extractFirstString(chunk);
-      if (fallback !== null) {
-        debugLog('SSE catch-all:', fallback);
-        fullContent += fallback;
-        continue;
+      if (earliest === -1) {
+        // No marker found — but tail of buffer might be a partial marker, hold it back
+        let safeEnd = this.buf.length;
+        for (const m of Object.values(MARKERS)) {
+          for (let i = m.start.length - 1; i > 0; i--) {
+            if (this.buf.endsWith(m.start.slice(0, i))) {
+              safeEnd = Math.min(safeEnd, this.buf.length - i);
+              break;
+            }
+          }
+        }
+        if (safeEnd > 0) {
+          this.onChatToken(this.buf.slice(0, safeEnd));
+          this.buf = this.buf.slice(safeEnd);
+        }
+        return;
       }
 
-      debugLog('SSE chunk had no extractable string:', chunk);
+      // Send any chat text that appears before the marker
+      if (earliest > 0) this.onChatToken(this.buf.slice(0, earliest));
 
-    } catch {
-      debugLog('SSE non-JSON data line (raw text):', payload);
-      fullContent += payload;
+      const marker      = MARKERS[foundType];
+      this.markerType   = foundType;
+      const afterMarker = this.buf.slice(earliest + marker.start.length);
+
+      if (marker.hasMeta) {
+        // ── Lambda format:
+        //   %%ARTIFACT_START%%
+        //   {"type":"html","title":"Modern Calculator"}
+        //   <!DOCTYPE html>...
+        //   %%ARTIFACT_END%%
+        //
+        // afterMarker begins with '\n' THEN the JSON line THEN '\n' THEN code.
+        // We MUST skip the leading newline first, otherwise we'd parse an empty
+        // string as the meta and include the JSON line in the artifact code.
+
+        const withoutLeadingNl = afterMarker.startsWith('\n')
+          ? afterMarker.slice(1)
+          : afterMarker;
+
+        const nl = withoutLeadingNl.indexOf('\n');
+        if (nl === -1) {
+          // Meta line not yet complete — wait for more data
+          this.buf = this.buf.slice(earliest);
+          return;
+        }
+
+        const metaStr = withoutLeadingNl.slice(0, nl).trim();
+        try   { this.artifactMeta = JSON.parse(metaStr); }
+        catch { this.artifactMeta = { type: 'html', title: 'Artifact' }; }
+
+        this.inArtifact   = true;
+        this.artifactCode = '';
+        this.started      = false;
+        // Everything after the meta line is the actual code
+        this.buf = withoutLeadingNl.slice(nl + 1);
+
+      } else {
+        // Non-meta markers (docx, ppt, doc) — code starts immediately
+        this.artifactMeta = { type: marker.type, title: marker.title };
+        this.inArtifact   = true;
+        this.artifactCode = '';
+        this.started      = false;
+        this.buf          = afterMarker;
+      }
+
+      this._process(); // Continue processing whatever is left in buf
+      return;
     }
-  }
 
-  const finalContent = deduplicateResponse(fullContent.trim());
+    // ── Already inside an artifact — scan for the end marker ─────────────────
+    const endMarker = MARKERS[this.markerType]?.end || '%%ARTIFACT_END%%';
+    const ei        = this.buf.indexOf(endMarker);
 
-  if (finalContent) {
-    return { response: finalContent };
-  }
-
-  throw new ApiError(
-    'Received a streaming response but could not extract content. ' +
-    'Check DevTools Console for "[AILCL] Raw SSE body" to inspect your API format.',
-    0,
-    rawText.slice(0, 500)
-  );
-};
-
-// ─── JSON shape normaliser ────────────────────────────────────────────────────
-const normaliseShape = (data) => {
-  if (typeof data === 'string' && data.trim()) {
-    return { response: deduplicateResponse(data) };
-  }
-
-  for (const key of ['response', 'message', 'answer', 'result', 'text']) {
-    if (typeof data?.[key] === 'string' && data[key].trim()) {
-      return { response: deduplicateResponse(data[key]) };
+    if (ei === -1) {
+      // Still streaming — accumulate and emit progress
+      this.artifactCode += this.buf;
+      if (!this.started) {
+        this.started = true;
+        this.onArtifactStart(this.artifactMeta?.title || 'Artifact');
+      }
+      this.onArtifactCode(this.artifactCode);
+      this.buf = '';
+      return;
     }
-  }
 
-  if (data?.content !== undefined && data.content !== null) {
-    const str = contentToString(data.content);
-    if (str.trim()) return { response: deduplicateResponse(str) };
-  }
-
-  const oaiContent = data?.choices?.[0]?.message?.content;
-  if (typeof oaiContent === 'string' && oaiContent.trim()) {
-    return { response: deduplicateResponse(oaiContent) };
-  }
-
-  const fallback = extractFirstString(data);
-  if (fallback !== null) return { response: deduplicateResponse(fallback) };
-
-  throw new ApiError(
-    'Could not extract a text response from the API reply.',
-    0,
-    JSON.stringify(data).slice(0, 300)
-  );
-};
-
-// ─── Response format detector ─────────────────────────────────────────────────
-const parseApiResponse = async (response) => {
-  const contentType = response.headers.get('content-type') || '';
-  const text        = await response.text();
-
-  debugLog('Content-Type:', contentType);
-  debugLog('Response preview:', text.slice(0, 300));
-
-  if (contentType.includes('application/json')) {
-    try   { return normaliseShape(JSON.parse(text)); }
-    catch { /* fall through */ }
-  }
-
-  if (contentType.includes('text/event-stream') || text.trimStart().startsWith('data:')) {
-    return parseSSEText(text);
-  }
-
-  try   { return normaliseShape(JSON.parse(text)); }
-  catch {
-    try   { return parseSSEText(text); }
-    catch {
-      throw new ApiError(
-        `Could not parse API response. Preview: ${text.slice(0, 200)}`,
-        response.status,
-        text
-      );
+    // End marker found — finalise artifact
+    this.artifactCode += this.buf.slice(0, ei);
+    if (!this.started) {
+      this.started = true;
+      this.onArtifactStart(this.artifactMeta?.title || 'Artifact');
     }
-  }
-};
+    this.onArtifactCode(this.artifactCode);
+    this.onArtifactDone({
+      type:     this.artifactMeta?.type     || 'html',
+      title:    this.artifactMeta?.title    || 'Artifact',
+      code:     this.artifactCode.trim(),
+      language: this.artifactMeta?.type     || 'html',
+    });
 
-// ─── Public API ───────────────────────────────────────────────────────────────
-export const sendChatMessage = async ({
+    this.inArtifact = false;
+    this.markerType = null;
+    this.buf        = this.buf.slice(ei + endMarker.length);
+    if (this.buf) this._process(); // Process anything after the end marker
+  }
+}
+
+// ─── Main streaming function ──────────────────────────────────────────────────
+export const streamChatMessage = async ({
   apiUrl,
+  s3Config = {},
   message,
-  history = [],
-  files   = [],
+  history     = [],
+  files       = [],
+  commandType = null,
   signal,
+  onToken,
+  onArtifactStart,
+  onArtifactChunk,
+  onArtifactDone,
+  onDone,
+  onError,
 }) => {
   if (!apiUrl) {
-    throw new Error('AILCL Widget: apiUrl property is not configured.');
+    onError?.(new Error('AILCL Widget: apiUrl not configured.'));
+    return;
+  }
+
+  // Upload files to S3 first
+  let s3Attachments = [];
+  if (files.length > 0) {
+    try {
+      s3Attachments = await uploadAllFilesToS3(files, s3Config);
+    } catch (err) {
+      onError?.(new ApiError(`File upload failed: ${err.message}`, 0, ''));
+      return;
+    }
   }
 
   const payload = {
     message,
-    history: buildApiHistory(history),
+    history:     buildApiHistory(history),
+    commandType: commandType || null,
+    ...(s3Attachments.length > 0 && { attachments: s3Attachments }),
   };
 
-  /**
-   * FILE UPLOAD — sent as a simple attachments[] array.
-   *
-   * Your Lambda receives this and is responsible for converting it to
-   * Bedrock content blocks before calling the model. This matches the
-   * original Lambda API contract.
-   *
-   * Each attachment: { name, type, size, data (base64 string) }
-   */
-  if (files.length > 0) {
-    payload.attachments = await buildAttachments(files);
+  debugLog('Sending:', { message, historyLen: payload.history.length, commandType });
 
-    debugLog('Attachments being sent:', payload.attachments.map((a) => ({
-      name: a.name,
-      type: a.type,
-      size: a.size,
-      dataLen: a.data?.length,
-    })));
+  let response;
+  try {
+    response = await fetch(apiUrl, {
+      method:  'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept':       'text/event-stream, application/json',
+      },
+      body:   JSON.stringify(payload),
+      signal,
+    });
+  } catch (err) {
+    if (err.name === 'AbortError') return;
+    onError?.(err);
+    return;
   }
 
-  debugLog('Payload summary:', {
-    message:        payload.message,
-    historyLen:     payload.history.length,
-    attachmentCount: payload.attachments?.length ?? 0,
+  if (!response.ok) {
+    const body = await response.text().catch(() => '');
+    onError?.(new ApiError(`API error ${response.status}`, response.status, body));
+    return;
+  }
+
+  let artifactResult = null;
+  let chatTextAccum  = '';
+
+  const parser = new ArtifactStreamParser({
+    onChatToken: (text) => {
+      chatTextAccum += text;
+      onToken?.(text);
+    },
+    onArtifactStart: (title) => {
+      onArtifactStart?.(title);
+    },
+    onArtifactCode: (code) => {
+      onArtifactChunk?.(code);
+    },
+    onArtifactDone: (artifact) => {
+      artifactResult = artifact;
+      onArtifactDone?.(artifact);
+    },
   });
 
-  let lastError;
+  const reader   = response.body.getReader();
+  const decoder  = new TextDecoder();
+  let   lineBuf  = '';
+  let   fullMsg  = '';
 
-  for (let attempt = 0; attempt < MAX_RETRY_ATTEMPTS; attempt++) {
-    const timeoutController = new AbortController();
-    const timeoutId = setTimeout(() => timeoutController.abort(), API_TIMEOUT_MS);
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
 
-    try {
-      const combinedSignal = mergeSignals([signal, timeoutController.signal]);
+      lineBuf += decoder.decode(value, { stream: true });
+      const lines = lineBuf.split('\n');
+      lineBuf     = lines.pop() ?? '';
 
-      const response = await fetch(apiUrl, {
-        method:  'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept':       'application/json, text/event-stream',
-        },
-        body:   JSON.stringify(payload),
-        signal: combinedSignal,
-      });
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith('data:')) continue;
 
-      clearTimeout(timeoutId);
+        const raw = trimmed.slice(5).trim();
+        if (!raw || raw === '[DONE]') continue;
 
-      if (!response.ok) {
-        const errorBody = await response.text().catch(() => '');
-        throw new ApiError(
-          `API error ${response.status}: ${response.statusText}`,
-          response.status,
-          errorBody
-        );
-      }
+        try {
+          const chunk = JSON.parse(raw);
 
-      return await parseApiResponse(response);
+          if (chunk.token !== undefined) {
+            fullMsg += chunk.token;
+            parser.push(chunk.token);
 
-    } catch (err) {
-      clearTimeout(timeoutId);
-      if (err.name === 'AbortError') throw err;
-      if (err instanceof ApiError && err.status >= 400 && err.status < 500) throw err;
-      lastError = err;
-      if (attempt < MAX_RETRY_ATTEMPTS - 1) {
-        await delay(RETRY_BASE_DELAY_MS * Math.pow(2, attempt));
+          } else if (chunk.done === true) {
+            // Lambda final event — flush parser first, then call onDone
+            parser.flush();
+            const finalMsg  = chunk.fullMessage || fullMsg;
+            const cleanChat = extractChatText(finalMsg) || chatTextAccum.trim();
+
+            // Re-extract artifact from the COMPLETE fullMessage (mirrors reference app).
+            // The stream-based artifactResult may be incomplete for large responses
+            // where the SSE stream was truncated before %%PPT_CODE_END%% arrived.
+            // chunk.fullMessage always has the full Lambda response.
+            const finalArtifact = extractArtifactFromMessage(finalMsg) || artifactResult;
+
+            onDone?.(cleanChat, finalArtifact);
+            return;
+
+          } else if (chunk.error) {
+            onError?.(new Error(chunk.error));
+            return;
+          }
+
+        } catch {
+          // Non-JSON SSE line — treat as raw text token
+          fullMsg += raw;
+          parser.push(raw);
+        }
       }
     }
+  } catch (err) {
+    if (err.name !== 'AbortError') onError?.(err);
+    return;
+  } finally {
+    try { reader.releaseLock(); } catch {}
   }
 
-  throw lastError;
+  // Stream ended without a done event — flush and call onDone
+  parser.flush();
+  const cleanChat = extractChatText(fullMsg) || chatTextAccum.trim();
+  onDone?.(cleanChat, artifactResult);
+};
+
+// ─── Strip artifact markers from chat text ────────────────────────────────────
+const ARTIFACT_STRIP_PATTERNS = [
+  /%%ARTIFACT_START%%[\s\S]*?%%ARTIFACT_END%%/g,
+  /%%DOCX_CODE_START%%[\s\S]*?%%DOCX_CODE_END%%/g,
+  /%%PPT_CODE_START%%[\s\S]*?%%PPT_CODE_END%%/g,
+  /%%DOC_START%%[\s\S]*?%%DOC_END%%/g,
+];
+
+export const extractChatText = (text) => {
+  if (!text) return '';
+  let result = text;
+  for (const pattern of ARTIFACT_STRIP_PATTERNS) {
+    result = result.replace(pattern, '');
+  }
+  return result.trim();
+};
+
+// ─── Extract final artifact from complete fullMessage ─────────────────────────
+// Mirrors the reference app's onDone logic: use the COMPLETE message (not the
+// incremental stream) to get the artifact code. This is critical for large
+// presentations where the SSE stream may be truncated — chunk.fullMessage
+// always contains the full response from the Lambda.
+export const extractArtifactFromMessage = (fullMessage) => {
+  if (!fullMessage) return null;
+
+  // HTML artifact with JSON metadata header
+  const artifactMatch = fullMessage.match(
+    /%%ARTIFACT_START%%\n?({.*?})\n([\s\S]*?)%%ARTIFACT_END%%/
+  );
+  if (artifactMatch) {
+    try {
+      const meta = JSON.parse(artifactMatch[1]);
+      return {
+        type:     meta.type     || 'html',
+        title:    meta.title    || 'Artifact',
+        code:     artifactMatch[2].trim(),
+        language: meta.type     || 'html',
+      };
+    } catch { /* fall through */ }
+  }
+
+  // DOCX
+  if (fullMessage.includes('%%DOCX_CODE_START%%') && fullMessage.includes('%%DOCX_CODE_END%%')) {
+    const m = fullMessage.match(/%%DOCX_CODE_START%%([\s\S]*?)%%DOCX_CODE_END%%/);
+    if (m) return { type: 'docx', title: 'Word Document', code: m[1].trim(), language: 'docx' };
+  }
+
+  // PPT
+  if (fullMessage.includes('%%PPT_CODE_START%%') && fullMessage.includes('%%PPT_CODE_END%%')) {
+    const m = fullMessage.match(/%%PPT_CODE_START%%([\s\S]*?)%%PPT_CODE_END%%/);
+    if (m) return { type: 'pptx', title: 'Presentation', code: m[1].trim(), language: 'pptx' };
+  }
+
+  // HTML document
+  if (fullMessage.includes('%%DOC_START%%') && fullMessage.includes('%%DOC_END%%')) {
+    const m = fullMessage.match(/%%DOC_START%%([\s\S]*?)%%DOC_END%%/);
+    if (m) return { type: 'document', title: 'HTML Document', code: m[1].trim(), language: 'document' };
+  }
+
+  return null;
 };

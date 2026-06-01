@@ -6,81 +6,146 @@
     <name>AILCL</name>
     <description>AI Chat Widget</description>
     <icon/>
-  <properties>
+    <properties>
 
-    <!-- ══ API Configuration ═════════════════════════════════════════════ -->
-    <propertyGroup caption="API Configuration">
-      <property key="apiUrl" type="string" required="true" defaultValue="">
-        <caption>API URL</caption>
-        <description>Backend AI API endpoint (e.g. your Lambda URL)</description>
-      </property>
-    </propertyGroup>
+        <!-- ═══════════════════════════════════════════════════════════
+             API CONFIGURATION
+        ═══════════════════════════════════════════════════════════ -->
+        <propertyGroup caption="API Configuration">
+ 
+        <property key="apiUrl" type="attribute" required="true">
+            <caption>API URL</caption>
+            <description>
+                String attribute containing the backend Lambda API endpoint URL.
+            </description>
+            <attributeTypes>
+                <attributeType name="String"/>
+            </attributeTypes>
+        </property>
+ 
+        </propertyGroup>
+ 
+        <!-- ═══════════════════════════════════════════════════════════
+             S3 FILE UPLOAD CONFIGURATION
+             Store credentials in Mendix — never hardcode in widget code.
+             ═══════════════════════════════════════════════════════════ -->
+        <propertyGroup caption="S3 File Upload">
+ 
+        <property key="s3Bucket" type="attribute" required="false">
+            <caption>S3 Bucket Name</caption>
+            <description>Name of the S3 bucket for file attachments (e.g. lcl-ai-skills)</description>
+            <attributeTypes><attributeType name="String"/></attributeTypes>
+        </property>
+ 
+        <property key="s3Region" type="attribute" required="false">
+            <caption>S3 Region</caption>
+            <description>AWS region of the S3 bucket (e.g. ap-south-1)</description>
+            <attributeTypes><attributeType name="String"/></attributeTypes>
+        </property>
+ 
+        <property key="s3KeyPrefix" type="attribute" required="false">
+            <caption>S3 Key Prefix</caption>
+            <description>Folder prefix for uploaded files (e.g. attachements-input)</description>
+            <attributeTypes><attributeType name="String"/></attributeTypes>
+        </property>
+ 
+        <property key="awsAccessKey" type="attribute" required="false">
+            <caption>AWS Access Key ID</caption>
+            <description>AWS Access Key ID for S3 uploads. Store securely in Mendix.</description>
+            <attributeTypes><attributeType name="String"/></attributeTypes>
+        </property>
+ 
+        <property key="awsSecretKey" type="attribute" required="false">
+            <caption>AWS Secret Access Key</caption>
+            <description>AWS Secret Access Key for S3 uploads. Store securely in Mendix.</description>
+            <attributeTypes><attributeType name="String"/></attributeTypes>
+        </property>
+ 
+        </propertyGroup>
 
-    <!-- ══ UI Configuration ══════════════════════════════════════════════ -->
-    <propertyGroup caption="UI Configuration">
-      <property key="title" type="string" required="false" defaultValue="AI Assistant">
-        <caption>Widget Title</caption>
-        <description>Title shown in the chat header</description>
-      </property>
-      <property key="placeholder" type="string" required="false" defaultValue="Type your message...">
-        <caption>Input Placeholder</caption>
-        <description>Placeholder text for the message input</description>
-      </property>
-      <property key="maxHeight" type="string" required="false" defaultValue="600px">
-        <caption>Max Height</caption>
-        <description>Max height of the chat window (e.g. 600px, 80vh)</description>
-      </property>
-      <property key="theme" type="enumeration" defaultValue="light">
-        <caption>Theme</caption>
-        <description>Colour theme</description>
-        <enumerationValues>
-          <enumerationValue key="light">Light</enumerationValue>
-          <enumerationValue key="dark">Dark</enumerationValue>
-          <enumerationValue key="auto">Auto (System)</enumerationValue>
-        </enumerationValues>
-      </property>
-    </propertyGroup>
+        <propertyGroup caption="UI Configuration">
+        <property key="title" type="string" required="false" defaultValue="AI Assistant">
+            <caption>Widget Title</caption>
+            <description>Title shown in the chat header</description>
+        </property>
+        <property key="placeholder" type="string" required="false" defaultValue="Ask me anything...">
+            <caption>Input Placeholder</caption>
+            <description>Placeholder text for the message input</description>
+        </property>
+        <property key="maxHeight" type="string" required="false" defaultValue="600px">
+            <caption>Max Height</caption>
+            <description>Max height of the chat window (e.g. 600px, 80vh)</description>
+        </property>
+        <property key="defaultDark" type="boolean" defaultValue="false">
+            <caption>Default Dark Mode</caption>
+            <description>Start in dark mode by default (user can toggle in UI)</description>
+        </property>
+        </propertyGroup>
 
-    <!-- ══ Features ══════════════════════════════════════════════════════ -->
-    <propertyGroup caption="Features">
-      <property key="allowMarkdown" type="boolean" defaultValue="true">
-        <caption>Render Markdown</caption>
-        <description>Render AI responses as rich Markdown (tables, code, lists)</description>
-      </property>
-      <property key="showCopyButton" type="boolean" defaultValue="true">
-        <caption>Show Copy Button</caption>
-        <description>Show copy-to-clipboard button on AI messages</description>
-      </property>
-      <property key="enableTypingAnimation" type="boolean" defaultValue="true">
-        <caption>Typing Animation</caption>
-        <description>Show animated typing indicator while waiting for response</description>
-      </property>
-      <property key="allowFileUpload" type="boolean" defaultValue="false">
-        <caption>Allow File Upload</caption>
-        <description>Enable users to attach files to messages</description>
-      </property>
-      <property key="acceptedFileTypes" type="string" required="false"
-        defaultValue=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.csv,.xlsx">
-        <caption>Accepted File Types</caption>
-        <description>Comma-separated file extensions (only used when file upload is enabled)</description>
-      </property>
-      <property key="maxFileSizeMB" type="integer" defaultValue="10">
-        <caption>Max File Size (MB)</caption>
-        <description>Maximum file size per attachment in megabytes</description>
-      </property>
-    </propertyGroup>
+        <propertyGroup caption="Features">
+        <property key="allowMarkdown" type="boolean" defaultValue="true">
+            <caption>Render Markdown</caption>
+            <description>Render AI responses as rich Markdown</description>
+        </property>
+        <property key="showCopyButton" type="boolean" defaultValue="true">
+            <caption>Show Copy Button</caption>
+            <description>Show copy button on AI messages</description>
+        </property>
+        <property key="enableTypingAnimation" type="boolean" defaultValue="true">
+            <caption>Typing Animation</caption>
+            <description>Show animated typing indicator</description>
+        </property>
+        <property key="allowFileUpload" type="boolean" defaultValue="false">
+            <caption>Allow File Upload</caption>
+            <description>Enable file attachments</description>
+        </property>
+        <property key="acceptedFileTypes" type="string" required="false"
+            defaultValue=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.csv,.xlsx">
+            <caption>Accepted File Types</caption>
+            <description>Comma-separated file extensions</description>
+        </property>
+        <property key="maxFileSizeMB" type="integer" defaultValue="10">
+            <caption>Max File Size (MB)</caption>
+            <description>Maximum file size per attachment</description>
+        </property>
+        </propertyGroup>
 
-    <!-- ══ Behaviour ═════════════════════════════════════════════════════ -->
-    <propertyGroup caption="Behaviour">
-      <property key="disabled" type="boolean" defaultValue="false">
-        <caption>Disabled</caption>
-        <description>Disable the chat input (can be driven by Mendix expression)</description>
-      </property>
-      <property key="autoScroll" type="boolean" defaultValue="true">
-        <caption>Auto Scroll</caption>
-        <description>Automatically scroll to the latest message</description>
-      </property>
-    </propertyGroup>
+        <propertyGroup caption="Behaviour">
+        <property key="disabled" type="boolean" defaultValue="false">
+            <caption>Disabled</caption>
+            <description>Disable the chat input</description>
+        </property>
+        <property key="autoScroll" type="boolean" defaultValue="true">
+            <caption>Auto Scroll</caption>
+            <description>Auto scroll to latest message</description>
+        </property>
+        </propertyGroup>
+        <propertyGroup caption="Chat History">
+            <property key="showSidebar" type="boolean" defaultValue="false">
+                <caption>Enable Chat History Sidebar</caption>
+                <description>
+                    Show the left sidebar listing the user's previous chat sessions.
+                    Requires chatHistoryJson and onHistoryChange to be configured.
+                </description>
+            </property>
+    
+            <property key="chatHistoryJson" type="attribute" required="false">
+                <caption>Chat History JSON</caption>
+                <description>
+                    String attribute on the ChatHistory entity that stores all sessions as JSON.
+                </description>
+                <attributeTypes>
+                    <attributeType name="String"/>
+                </attributeTypes>
+            </property>
+    
+            <property key="onHistoryChange" type="action" required="false">
+                <caption>On History Change</caption>
+                <description>
+                    Action that is called whenever the chat history changes (e.g. new message, new session).
+                </description>
+           </property>
+        </propertyGroup>
 
-  </properties>
+    </properties>
 </widget>

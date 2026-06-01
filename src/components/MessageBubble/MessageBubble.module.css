@@ -1,37 +1,51 @@
-/* ── Wrapper (row) ───────────────────────────────────────────────────── */
+/* ── Wrapper (row) ───────────────────────────────────────────────── */
 .wrapper {
   display:     flex;
   gap:         10px;
   align-items: flex-end;
-  padding:     6px 0;
-  animation:   fadeSlideIn 0.22s ease both;
+  padding:     5px 0;
 }
 .userWrapper      { flex-direction: row-reverse; }
 .assistantWrapper { flex-direction: row; }
-.errorWrapper .bubble { opacity: 0.8; }
 
-@keyframes fadeSlideIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+/* Staggered entry animations */
+.userWrapper {
+  animation: slideInRight 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.assistantWrapper {
+  animation: slideInLeft 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.errorWrapper .bubble { opacity: 0.75; }
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px) scale(0.95); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-20px) scale(0.95); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
 }
 
-/* ── Avatar ─────────────────────────────────────────────────────────── */
-.avatar     { flex-shrink: 0; width: 32px; height: 32px; }
+/* ── Avatar ──────────────────────────────────────────────────────── */
+.avatar { flex-shrink: 0; width: 32px; height: 32px; }
+
 .avatarAi {
   width:           32px;
   height:          32px;
-  border-radius:   50%;
+  border-radius:   var(--ailcl-radius-xs);
   background:      var(--ailcl-avatar-ai-bg);
   color:           var(--ailcl-avatar-ai-color);
   display:         flex;
   align-items:     center;
   justify-content: center;
+  border:          1px solid var(--ailcl-border);
 }
-.avatarAi svg   { width: 16px; height: 16px; }
+.avatarAi svg { width: 15px; height: 15px; }
+
 .avatarUser {
   width:           32px;
   height:          32px;
-  border-radius:   50%;
+  border-radius:   var(--ailcl-radius-xs);
   background:      var(--ailcl-avatar-user-bg);
   color:           var(--ailcl-avatar-user-text);
   display:         flex;
@@ -39,120 +53,142 @@
   justify-content: center;
   font-size:       13px;
   font-weight:     700;
+  letter-spacing:  0.02em;
 }
 
-/* ── Bubble group ────────────────────────────────────────────────────── */
+/* ── Bubble group ─────────────────────────────────────────────────── */
 .group {
   display:        flex;
   flex-direction: column;
   gap:            4px;
-  max-width:      72%;
+  max-width:      74%;
   min-width:      0;
 }
-.userWrapper .group   { align-items: flex-end; }
+.userWrapper .group      { align-items: flex-end; }
 .assistantWrapper .group { align-items: flex-start; }
 
-/* ── Bubble ─────────────────────────────────────────────────────────── */
+/* ── Bubble ───────────────────────────────────────────────────────── */
 .bubble {
   padding:       10px 14px;
-  border-radius: var(--ailcl-radius-sm);
-  line-height:   1.6;
+  line-height:   1.65;
   word-break:    break-word;
   font-size:     14px;
+  position:      relative;
 }
+
 .userBubble {
-  background:         var(--ailcl-user-bg);
-  color:              var(--ailcl-user-text);
-  border-bottom-right-radius: 4px;
+  background:               var(--ailcl-user-bg);
+  color:                    var(--ailcl-user-text);
+  border-radius:            var(--ailcl-radius-sm) var(--ailcl-radius-sm) 4px var(--ailcl-radius-sm);
+  /* Subtle inner glow on brand color */
+  box-shadow:               inset 0 1px 0 rgba(255,255,255,0.12);
 }
+
 .aiBubble {
-  background:         var(--ailcl-ai-bg);
-  color:              var(--ailcl-ai-text);
-  border-bottom-left-radius: 4px;
+  background:               var(--ailcl-ai-bg);
+  color:                    var(--ailcl-ai-text);
+  border-radius:            var(--ailcl-radius-sm) var(--ailcl-radius-sm) var(--ailcl-radius-sm) 4px;
+  border:                   1px solid var(--ailcl-ai-border);
 }
+
 .text { margin: 0; white-space: pre-wrap; }
 
-/* ── Error badge ─────────────────────────────────────────────────────── */
+/* ── Error badge ──────────────────────────────────────────────────── */
 .errorBadge {
-  font-size:  12px;
-  color:      var(--ailcl-error);
-  padding:    2px 0;
+  font-size:   11px;
+  color:       var(--ailcl-error);
+  padding:     3px 0;
+  font-weight: 500;
 }
 
-/* ── Meta row ────────────────────────────────────────────────────────── */
+/* ── Meta row ─────────────────────────────────────────────────────── */
 .meta {
   display:     flex;
   align-items: center;
   gap:         6px;
   padding:     0 2px;
+  opacity:     0;
+  transition:  opacity 0.15s ease;
 }
-.userWrapper .meta { flex-direction: row-reverse; }
+.wrapper:hover .meta { opacity: 1; }
+
+.userWrapper .meta   { flex-direction: row-reverse; }
+
 .timestamp {
-  font-size: 11px;
+  font-size: 10px;
   color:     var(--ailcl-text-muted);
+  white-space: nowrap;
 }
 
-/* ── Markdown body ───────────────────────────────────────────────────── */
+/* ── Markdown body ────────────────────────────────────────────────── */
 .markdown { font-size: 14px; line-height: 1.7; color: var(--ailcl-ai-text); }
 .markdown p  { margin: 0 0 10px; }
 .markdown p:last-child { margin-bottom: 0; }
 .markdown h1,.markdown h2,.markdown h3 {
-  font-weight: 600;
-  margin: 14px 0 6px;
-  color: var(--ailcl-text-primary);
+  font-weight: 700;
+  margin:      16px 0 6px;
+  color:       var(--ailcl-text-primary);
+  letter-spacing: -0.01em;
 }
 .markdown h1 { font-size: 18px; }
 .markdown h2 { font-size: 16px; }
 .markdown h3 { font-size: 14px; }
 .markdown ul,.markdown ol { padding-left: 20px; margin: 6px 0 10px; }
-.markdown li { margin-bottom: 4px; }
-.markdown strong { font-weight: 600; }
+.markdown li { margin-bottom: 5px; }
+.markdown strong { font-weight: 700; color: var(--ailcl-text-primary); }
 .markdown em     { font-style: italic; }
 .markdown blockquote {
   border-left:  3px solid var(--ailcl-primary);
-  margin:       8px 0;
-  padding:      4px 12px;
+  margin:       10px 0;
+  padding:      6px 14px;
   color:        var(--ailcl-text-secondary);
   font-style:   italic;
+  background:   var(--ailcl-primary-light);
+  border-radius: 0 var(--ailcl-radius-xs) var(--ailcl-radius-xs) 0;
 }
 .markdown table {
   border-collapse: collapse;
   width:           100%;
   margin:          10px 0;
   font-size:       13px;
+  border-radius:   var(--ailcl-radius-xs);
+  overflow:        hidden;
 }
 .markdown th {
-  background:  var(--ailcl-surface-2);
-  padding:     6px 10px;
+  background:  var(--ailcl-primary-light);
+  padding:     7px 12px;
   text-align:  left;
-  font-weight: 600;
+  font-weight: 700;
+  color:       var(--ailcl-text-primary);
   border:      1px solid var(--ailcl-border);
 }
 .markdown td {
-  padding: 6px 10px;
+  padding: 7px 12px;
   border:  1px solid var(--ailcl-border);
 }
 .markdown a {
   color:           var(--ailcl-primary);
   text-decoration: underline;
+  text-underline-offset: 2px;
 }
+.markdown a:hover { opacity: 0.8; }
 
-/* ── Inline code ─────────────────────────────────────────────────────── */
+/* ── Inline code ──────────────────────────────────────────────────── */
 .inlineCode {
-  font-family:  var(--ailcl-mono);
-  font-size:    12.5px;
-  background:   var(--ailcl-surface-2);
-  padding:      2px 6px;
+  font-family:   var(--ailcl-mono);
+  font-size:     12.5px;
+  background:    var(--ailcl-surface-2);
+  padding:       2px 6px;
   border-radius: var(--ailcl-radius-xs);
-  color:        var(--ailcl-text-primary);
-  border:       1px solid var(--ailcl-border);
+  color:         var(--ailcl-primary);
+  border:        1px solid var(--ailcl-border);
 }
 
-/* ── Code block ─────────────────────────────────────────────────────── */
+/* ── Code block ───────────────────────────────────────────────────── */
 .codeBlock {
-  border-radius: var(--ailcl-radius-sm);
+  border-radius: var(--ailcl-radius-xs);
   overflow:      hidden;
-  margin:        8px 0;
+  margin:        10px 0;
   border:        1px solid rgba(255,255,255,0.06);
 }
 .codeHeader {
@@ -160,11 +196,91 @@
   align-items:     center;
   justify-content: space-between;
   padding:         6px 12px;
-  background:      #1a1b26;
+  background:      #1a1b2e;
 }
 .codeLang {
-  font-size:   11px;
-  font-family: var(--ailcl-mono);
-  color:       #9aa5ce;
+  font-size:      11px;
+  font-family:    var(--ailcl-mono);
+  color:          #818cf8;
   text-transform: lowercase;
+  font-weight:    500;
 }
+
+/* ── Artifact open button ─────────────────────────────────────────── */
+/* ── Artifact open button ─────────────────────────────────────────── */
+.artifactBtn {
+  display:       flex;
+  align-items:   center;
+  gap:           7px;
+  padding:       7px 14px;
+  background:    var(--ailcl-primary-light);
+  border:        1px solid rgba(46, 49, 146, 0.2);
+  border-radius: var(--ailcl-radius-xs);
+  color:         var(--ailcl-primary);
+  font-size:     12px;
+  font-weight:   500;
+  cursor:        pointer;
+  transition:    all var(--ailcl-transition-spring);
+  margin-top:    4px;
+}
+.artifactBtn svg { width: 13px; height: 13px; flex-shrink: 0; }
+.artifactBtn:hover {
+  background: var(--ailcl-primary);
+  color:      #ffffff;
+  transform:  translateY(-1px);
+  box-shadow: 0 4px 12px var(--ailcl-primary-glow);
+}
+.artifactBtn:hover .artifactLangBadge {
+  background: rgba(255,255,255,0.2);
+  color:      #ffffff;
+}
+
+.artifactLangBadge {
+  font-family:   var(--ailcl-mono);
+  font-size:     10px;
+  font-weight:   600;
+  padding:       1px 7px;
+  border-radius: var(--ailcl-radius-pill);
+  background:    rgba(46, 49, 146, 0.12);
+  color:         var(--ailcl-primary);
+  margin-left:   auto;
+}
+
+.artifactBtn {
+  display:       flex;
+  align-items:   center;
+  gap:           7px;
+  padding:       7px 14px;
+  background:    var(--ailcl-primary-light);
+  border:        1px solid rgba(46, 49, 146, 0.2);
+  border-radius: var(--ailcl-radius-xs);
+  color:         var(--ailcl-primary);
+  font-size:     12px;
+  font-weight:   500;
+  cursor:        pointer;
+  transition:    all var(--ailcl-transition-spring);
+  margin-top:    4px;
+}
+.artifactBtn svg { width: 13px; height: 13px; flex-shrink: 0; }
+.artifactBtn:hover {
+  background: var(--ailcl-primary);
+  color:      #ffffff;
+  transform:  translateY(-1px);
+  box-shadow: 0 4px 12px var(--ailcl-primary-glow);
+}
+.artifactBtn:hover .artifactLangBadge {
+  background: rgba(255,255,255,0.2);
+  color:      #ffffff;
+}
+.artifactLangBadge {
+  font-family:   var(--ailcl-mono);
+  font-size:     10px;
+  font-weight:   600;
+  padding:       1px 7px;
+  border-radius: var(--ailcl-radius-pill);
+  background:    rgba(46, 49, 146, 0.12);
+  color:         var(--ailcl-primary);
+  margin-left:   auto;
+}
+
+/* Add EyeIcon inline in MessageBubble.jsx */

@@ -1,43 +1,81 @@
 import { useReducer, useCallback, useRef } from 'react';
-import { sendChatMessage }                  from '../services/apiService';
-import { createMessage }                    from '../utils/messageUtils';
+import { streamChatMessage, extractChatText } from '../services/apiService';
+import { createMessage }                       from '../utils/messageUtils';
 import { MESSAGE_ROLES, MESSAGE_STATUS, MAX_HISTORY_LENGTH } from '../constants';
 
 // ─── Action types ─────────────────────────────────────────────────────────────
 const A = {
-  ADD_USER_MSG:       'ADD_USER_MSG',
-  SET_LOADING:        'SET_LOADING',
-  ADD_ASSISTANT_MSG:  'ADD_ASSISTANT_MSG',
-  SET_ERROR:          'SET_ERROR',
-  CLEAR_ERROR:        'CLEAR_ERROR',
-  CLEAR_CHAT:         'CLEAR_CHAT',
+  ADD_USER_MSG:    'ADD_USER_MSG',
+  START_STREAM:    'START_STREAM',   // creates empty assistant message
+  APPEND_TOKEN:    'APPEND_TOKEN',   // appends text to streaming message
+  FINISH_STREAM:   'FINISH_STREAM',  // finalises with clean content + artifact ref
+  SET_ERROR:       'SET_ERROR',
+  CLEAR_ERROR:     'CLEAR_ERROR',
+  CLEAR_CHAT:      'CLEAR_CHAT',
+  LOAD_HISTORY:    'LOAD_HISTORY',   // replace messages when switching sessions
 };
 
-// ─── Reducer ─────────────────────────────────────────────────────────────────
+// ─── Reducer ──────────────────────────────────────────────────────────────────
 const initialState = {
-  messages:  [],
-  isLoading: false,
-  error:     null,
+  messages:    [],
+  isLoading:   false,
+  error:       null,
+  streamingId: null,   // ID of the currently streaming assistant message
 };
 
 const chatReducer = (state, { type, payload }) => {
   switch (type) {
+
     case A.ADD_USER_MSG:
       return { ...state, messages: [...state.messages, payload], error: null };
 
-    case A.SET_LOADING:
-      return { ...state, isLoading: payload };
+    case A.START_STREAM:
+      return {
+        ...state,
+        isLoading:   true,
+        streamingId: payload.id,
+        messages:    [...state.messages, payload],
+      };
 
-    case A.ADD_ASSISTANT_MSG:
-      return { ...state, messages: [...state.messages, payload], isLoading: false, error: null };
+    case A.APPEND_TOKEN: {
+      if (!state.streamingId) return state;
+      return {
+        ...state,
+        messages: state.messages.map((m) =>
+          m.id === state.streamingId
+            ? { ...m, content: m.content + payload }
+            : m
+        ),
+      };
+    }
+
+    case A.FINISH_STREAM: {
+      // payload: { finalContent?: string, artifact?: object }
+      return {
+        ...state,
+        isLoading:   false,
+        streamingId: null,
+        messages: state.messages.map((m) =>
+          m.id === state.streamingId
+            ? {
+                ...m,
+                // Use finalContent if provided, otherwise keep what was streamed
+                content:  payload.finalContent !== undefined ? payload.finalContent : m.content,
+                status:   MESSAGE_STATUS.SENT,
+                artifact: payload.artifact || null,
+              }
+            : m
+        ),
+      };
+    }
 
     case A.SET_ERROR:
       return {
         ...state,
-        isLoading: false,
-        error: payload.errorMsg,
-        // Mark the offending user message as errored
-        messages: state.messages.map((m) =>
+        isLoading:   false,
+        streamingId: null,
+        error:       payload.errorMsg,
+        messages:    state.messages.map((m) =>
           m.id === payload.messageId ? { ...m, status: MESSAGE_STATUS.ERROR } : m
         ),
       };
@@ -48,6 +86,9 @@ const chatReducer = (state, { type, payload }) => {
     case A.CLEAR_CHAT:
       return { ...initialState };
 
+    case A.LOAD_HISTORY:
+      return { ...initialState, messages: payload || [] };
+
     default:
       return state;
   }
@@ -55,83 +96,118 @@ const chatReducer = (state, { type, payload }) => {
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 /**
- * Central hook — owns all chat state and side effects.
- *
  * @param {{ apiUrl: string }} options
  */
-export const useChat = ({ apiUrl }) => {
+export const useChat = ({ apiUrl, s3Config = {} }) => {
   const [state, dispatch]    = useReducer(chatReducer, initialState);
   const abortControllerRef   = useRef(null);
+  const streamingIdRef       = useRef(null); // mirror of state.streamingId for closures
 
-  // ── Send message ────────────────────────────────────────────────────────────
-  const sendMessage = useCallback(async ({ text, files = [] }) => {
+  const sendMessage = useCallback(async ({
+    text,
+    files        = [],
+    commandType  = null,
+    onArtifactEvent,            // (event: {type, title?, code?, artifact?}) => void
+  }) => {
     const trimmed = text?.trim() ?? '';
-    if ((!trimmed && files.length === 0) || state.isLoading) return;
+    if ((!trimmed && files.length === 0 && !commandType) || state.isLoading) return;
 
-    // Cancel any in-flight request before starting a new one
+    // Cancel any in-flight request
     abortControllerRef.current?.abort();
     abortControllerRef.current = new AbortController();
 
-    const userMsg = createMessage({
-      role:    MESSAGE_ROLES.USER,
-      content: trimmed,
+    // Add user message
+    const userMsg = createMessage({ role: MESSAGE_ROLES.USER, content: trimmed, files });
+    dispatch({ type: A.ADD_USER_MSG, payload: userMsg });
+
+    // Create empty streaming assistant message
+    const streamMsg = createMessage({ role: MESSAGE_ROLES.ASSISTANT, content: '' });
+    streamingIdRef.current = streamMsg.id;
+    dispatch({ type: A.START_STREAM, payload: streamMsg });
+
+    const historySlice = state.messages.slice(-MAX_HISTORY_LENGTH);
+    let   artifactData = null;
+
+    await streamChatMessage({
+      apiUrl,
+      s3Config,
+      message:     trimmed,
+      history:     historySlice,
       files,
+      commandType,
+      signal:      abortControllerRef.current.signal,
+
+      // Each chat token gets appended to the streaming message
+      onToken: (token) => {
+        dispatch({ type: A.APPEND_TOKEN, payload: token });
+      },
+
+      // Artifact panel events — forwarded to ChatContainer via callback
+      onArtifactStart: (title) => {
+        onArtifactEvent?.({ type: 'start', title });
+      },
+
+      onArtifactChunk: (code) => {
+        onArtifactEvent?.({ type: 'chunk', code });
+      },
+
+      onArtifactDone: (artifact) => {
+        artifactData = artifact;
+        onArtifactEvent?.({ type: 'done', artifact });
+      },
+
+      // Stream complete
+      onDone: (cleanChatText) => {
+        dispatch({
+          type:    A.FINISH_STREAM,
+          payload: {
+            // Replace raw streaming content (which may include partial markers)
+            // with the clean chat text extracted from fullMessage
+            finalContent: cleanChatText || undefined,
+            artifact:     artifactData,
+          },
+        });
+        streamingIdRef.current = null;
+      },
+
+      // Error
+      onError: (err) => {
+        if (err?.name === 'AbortError') {
+          dispatch({ type: A.FINISH_STREAM, payload: {} });
+          streamingIdRef.current = null;
+          return;
+        }
+        dispatch({
+          type:    A.SET_ERROR,
+          payload: {
+            errorMsg:  err?.message || 'Failed to get a response. Please try again.',
+            messageId: userMsg.id,
+          },
+        });
+        streamingIdRef.current = null;
+      },
     });
 
-    dispatch({ type: A.ADD_USER_MSG,  payload: userMsg });
-    dispatch({ type: A.SET_LOADING,   payload: true });
-
-    try {
-      // Send only the last N messages to avoid token overflow
-      const historySlice = state.messages.slice(-MAX_HISTORY_LENGTH);
-
-      const { response } = await sendChatMessage({
-        apiUrl,
-        message: trimmed,
-        history: historySlice,
-        files,
-        signal: abortControllerRef.current.signal,
-      });
-
-      const assistantMsg = createMessage({
-        role:    MESSAGE_ROLES.ASSISTANT,
-        content: response,
-      });
-
-      dispatch({ type: A.ADD_ASSISTANT_MSG, payload: assistantMsg });
-
-    } catch (err) {
-      if (err.name === 'AbortError') {
-        // User cancelled — just stop loading, keep messages as-is
-        dispatch({ type: A.SET_LOADING, payload: false });
-        return;
-      }
-      dispatch({
-        type:    A.SET_ERROR,
-        payload: {
-          errorMsg:  err.message || 'Failed to get a response. Please try again.',
-          messageId: userMsg.id,
-        },
-      });
-    }
   }, [apiUrl, state.messages, state.isLoading]);
 
-  // ── Cancel ──────────────────────────────────────────────────────────────────
   const cancelRequest = useCallback(() => {
     abortControllerRef.current?.abort();
   }, []);
 
-  // ── Clear ───────────────────────────────────────────────────────────────────
-  const clearChat  = useCallback(() => dispatch({ type: A.CLEAR_CHAT }),  []);
-  const clearError = useCallback(() => dispatch({ type: A.CLEAR_ERROR }), []);
+  const clearChat   = useCallback(() => dispatch({ type: A.CLEAR_CHAT }),  []);
+  const clearError  = useCallback(() => dispatch({ type: A.CLEAR_ERROR }), []);
+  const loadHistory = useCallback((msgs) =>
+    dispatch({ type: A.LOAD_HISTORY, payload: msgs }),
+  []);
 
   return {
-    messages:  state.messages,
-    isLoading: state.isLoading,
-    error:     state.error,
+    messages:    state.messages,
+    isLoading:   state.isLoading,
+    error:       state.error,
     sendMessage,
     cancelRequest,
     clearChat,
     clearError,
+    loadHistory,
   };
 };

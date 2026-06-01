@@ -3,49 +3,63 @@ import ChatContainer  from './components/ChatContainer/ChatContainer';
 import ErrorBoundary  from './components/ErrorBoundary/ErrorBoundary';
 import './ui/AILCL.css';
 
-/**
- * AILCL — Mendix Pluggable Widget Entry Point
- *
- * Mendix calls this component with the properties defined in AILCL.xml.
- * All props are plain values (string, boolean, number) for simple property types.
- *
- * Property naming: Mendix converts camelCase XML keys directly to JS props.
- * e.g. XML key="apiUrl" → props.apiUrl
- */
 const AILCL = (props) => {
   const {
+    // API — now a Mendix attribute (not a hardcoded string)
     apiUrl,
-    title              = 'AI Assistant',
-    placeholder        = 'Type your message…',
-    maxHeight          = '600px',
-    theme              = 'light',
-    disabled           = false,
-    allowMarkdown      = true,
-    showCopyButton     = true,
+
+    // S3 upload config — all Mendix attributes (never hardcoded)
+    s3Bucket, s3Region, s3KeyPrefix, awsAccessKey, awsSecretKey,
+
+    // UI
+    title                 = 'LCL-AI Assistant',
+    placeholder           = 'Ask me anything…',
+    maxHeight             = '600px',
+    defaultDark           = false,
+    disabled              = false,
+    allowMarkdown         = true,
+    showCopyButton        = true,
     enableTypingAnimation = true,
-    allowFileUpload    = false,
-    acceptedFileTypes  = '.pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.csv,.xlsx',
-    maxFileSizeMB      = 10,
-    autoScroll         = true,
+    allowFileUpload       = false,
+    acceptedFileTypes     = '.pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.csv,.xlsx',
+    maxFileSizeMB         = 10,
+    autoScroll            = true,
+
+    // Session history
+    showSidebar           = false,
+    chatHistoryJson,
+    onHistoryChange,
   } = props;
 
-  // Guard: warn in Mendix Studio Pro if API URL is missing
-  if (!apiUrl) {
+  // Read the API URL from the Mendix attribute value
+  const resolvedApiUrl = apiUrl?.value ?? '';
+
+  if (!resolvedApiUrl) {
     return (
       <div className="ailcl-config-warning">
-        ⚙ <strong>AILCL Widget:</strong> Please set the <em>API URL</em> property in widget configuration.
+        ⚙ <strong>AILCL Widget:</strong> Please set the <em>API URL</em> attribute property.
       </div>
     );
   }
 
+  // Read S3 config values from Mendix attributes
+  const s3Config = {
+    bucket:    s3Bucket?.value    ?? '',
+    region:    s3Region?.value    ?? '',
+    keyPrefix: s3KeyPrefix?.value ?? 'attachements-input',
+    accessKey: awsAccessKey?.value ?? '',
+    secretKey: awsSecretKey?.value ?? '',
+  };
+
   return (
     <ErrorBoundary>
       <ChatContainer
-        apiUrl={apiUrl}
+        apiUrl={resolvedApiUrl}
+        s3Config={s3Config}
         title={title}
         placeholder={placeholder}
         maxHeight={maxHeight}
-        theme={theme}
+        defaultDark={defaultDark}
         disabled={disabled}
         allowMarkdown={allowMarkdown}
         showCopyButton={showCopyButton}
@@ -54,6 +68,9 @@ const AILCL = (props) => {
         acceptedFileTypes={acceptedFileTypes}
         maxFileSizeMB={maxFileSizeMB}
         autoScroll={autoScroll}
+        showSidebar={showSidebar}
+        chatHistoryJson={chatHistoryJson}
+        onHistoryChange={onHistoryChange}
       />
     </ErrorBoundary>
   );

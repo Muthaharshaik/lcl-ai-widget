@@ -1,0 +1,439 @@
+/* ── Panel wrapper ────────────────────────────────────────────────── */
+.panel {
+  display:        flex;
+  flex-direction: column;
+  width:          50%;
+  min-width:      360px;
+  max-width:      55%;
+  border-left:    1px solid var(--ailcl-border);
+  background:     var(--ailcl-bg);
+  animation:      panelSlideIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  overflow:       hidden;
+  flex-shrink:    0;
+}
+
+@keyframes panelSlideIn {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── Toolbar ─────────────────────────────────────────────────────── */
+.toolbar {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  padding:         8px 14px;
+  border-bottom:   1px solid var(--ailcl-border);
+  background:      var(--ailcl-surface);
+  flex-shrink:     0;
+  gap:             10px;
+  min-height:      46px;
+}
+
+.toolbarTitle {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  min-width:   0;
+  flex:        1;
+}
+
+.titleText {
+  font-size:      13px;
+  font-weight:    600;
+  color:          var(--ailcl-text-primary);
+  white-space:    nowrap;
+  overflow:       hidden;
+  text-overflow:  ellipsis;
+  max-width:      160px;
+}
+
+.langBadge {
+  font-size:     10px;
+  font-weight:   600;
+  font-family:   var(--ailcl-mono);
+  color:         var(--ailcl-primary);
+  background:    var(--ailcl-primary-light);
+  padding:       2px 7px;
+  border-radius: var(--ailcl-radius-pill);
+  flex-shrink:   0;
+}
+
+.toolbarActions {
+  display:     flex;
+  align-items: center;
+  gap:         2px;
+  flex-shrink: 0;
+}
+
+/* Preview/Code toggle pill */
+.viewToggle {
+  display:       flex;
+  align-items:   center;
+  background:    var(--ailcl-surface-2);
+  border-radius: var(--ailcl-radius-xs);
+  padding:       2px;
+  gap:           2px;
+}
+
+.toggleBtn {
+  display:         flex;
+  align-items:     center;
+  gap:             5px;
+  padding:         5px 10px;
+  border:          none;
+  border-radius:   5px;
+  background:      transparent;
+  color:           var(--ailcl-text-muted);
+  font-size:       11px;
+  font-weight:     500;
+  cursor:          pointer;
+  transition:      all var(--ailcl-transition);
+  white-space:     nowrap;
+}
+.toggleBtn svg { width: 12px; height: 12px; }
+.toggleBtn:hover { color: var(--ailcl-text-primary); }
+
+.toggleActive {
+  background: var(--ailcl-primary) !important;
+  color:      #ffffff !important;
+  box-shadow: 0 1px 4px var(--ailcl-primary-glow);
+}
+
+/* Icon buttons */
+.iconBtn {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  width:           28px;
+  height:          28px;
+  border:          none;
+  border-radius:   var(--ailcl-radius-xs);
+  background:      transparent;
+  color:           var(--ailcl-text-muted);
+  cursor:          pointer;
+  transition:      all var(--ailcl-transition);
+}
+.iconBtn svg       { width: 13px; height: 13px; }
+.iconBtn:hover     { background: var(--ailcl-surface-2); color: var(--ailcl-text-primary); }
+.iconBtnSuccess    { color: #22c55e !important; }
+.iconBtnClose:hover { background: var(--ailcl-error-bg) !important; color: var(--ailcl-error) !important; }
+
+.divider {
+  width:      1px;
+  height:     18px;
+  background: var(--ailcl-border);
+  margin:     0 4px;
+  flex-shrink: 0;
+}
+
+/* Download menu */
+.downloadMenu {
+  position:      absolute;
+  top:           calc(100% + 4px);
+  right:         0;
+  background:    var(--ailcl-bg);
+  border:        1px solid var(--ailcl-border);
+  border-radius: var(--ailcl-radius-sm);
+  box-shadow:    var(--ailcl-shadow);
+  z-index:       50;
+  min-width:     180px;
+  overflow:      hidden;
+  animation:     menuFade 0.15s ease both;
+}
+
+@keyframes menuFade {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.downloadMenuHeader {
+  padding:       6px 14px;
+  font-size:     10px;
+  font-weight:   700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color:         var(--ailcl-text-muted);
+  border-bottom: 1px solid var(--ailcl-border);
+}
+
+.downloadMenuItem {
+  display:     flex;
+  align-items: center;
+  gap:         10px;
+  width:       100%;
+  padding:     10px 14px;
+  border:      none;
+  background:  transparent;
+  color:       var(--ailcl-text-primary);
+  font-size:   13px;
+  cursor:      pointer;
+  text-align:  left;
+  transition:  background var(--ailcl-transition);
+}
+.downloadMenuItem:hover { background: var(--ailcl-surface); }
+
+.downloadIcon { font-size: 16px; flex-shrink: 0; }
+
+.downloadSubtext {
+  font-size: 11px;
+  color:     var(--ailcl-text-muted);
+  margin-top: 1px;
+}
+
+/* ── Panel body ──────────────────────────────────────────────────── */
+.panelBody {
+  flex:     1;
+  overflow: hidden;
+  display:  flex;
+  flex-direction: column;
+}
+
+/* ── Preview iframe ──────────────────────────────────────────────── */
+.previewContainer {
+  position: relative;
+  flex:     1;
+  overflow: hidden;
+}
+
+.previewLoading {
+  position:        absolute;
+  inset:           0;
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  gap:             12px;
+  background:      var(--ailcl-bg);
+  font-size:       13px;
+  color:           var(--ailcl-text-muted);
+  z-index:         10;
+}
+
+.previewSpinner {
+  width:        24px;
+  height:       24px;
+  border:       2.5px solid var(--ailcl-border);
+  border-top-color: var(--ailcl-primary);
+  border-radius: 50%;
+  animation:    spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.previewFrame {
+  width:  100%;
+  height: 100%;
+  border: none;
+}
+
+/* ── Code view ────────────────────────────────────────────────────── */
+.codeViewContainer {
+  flex:       1;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.codeHighlight {
+  margin:      0 !important;
+  border-radius: 0 !important;
+  font-size:   12.5px !important;
+  line-height: 1.65 !important;
+  min-height:  100%;
+  font-family: var(--ailcl-mono) !important;
+  padding:     16px 0 !important;
+}
+
+.codeLine {
+  display:     flex;
+  align-items: baseline;
+  padding:     0 16px;
+}
+.codeLine:hover { background: rgba(255,255,255,0.04); }
+
+.lineNumber {
+  display:        inline-block;
+  min-width:      36px;
+  margin-right:   12px;
+  color:          #555577;
+  font-size:      11px;
+  text-align:     right;
+  user-select:    none;
+  flex-shrink:    0;
+}
+
+.plainCode {
+  margin:      0;
+  padding:     16px;
+  font-family: var(--ailcl-mono);
+  font-size:   12.5px;
+  line-height: 1.65;
+  color:       var(--ailcl-text-primary);
+  background:  var(--ailcl-bg);
+  min-height:  100%;
+  white-space: pre-wrap;
+  word-break:  break-all;
+}
+
+/* ── No preview state ─────────────────────────────────────────────── */
+.noPreview {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  flex:            1;
+  gap:             10px;
+  padding:         40px 24px;
+  text-align:      center;
+  color:           var(--ailcl-text-muted);
+  font-size:       13px;
+}
+.noPreview span { font-size: 36px; }
+.noPreview p    { margin: 0; line-height: 1.5; }
+.noPreview strong { color: var(--ailcl-text-primary); }
+
+.switchBtn {
+  margin-top:    8px;
+  padding:       8px 20px;
+  background:    var(--ailcl-primary);
+  color:         #fff;
+  border:        none;
+  border-radius: var(--ailcl-radius-pill);
+  font-size:     13px;
+  font-weight:   500;
+  cursor:        pointer;
+  transition:    all var(--ailcl-transition);
+}
+.switchBtn:hover { background: var(--ailcl-primary-hover); }
+
+/* ── Additions for library integration ────────────────────────── */
+.errorBar {
+  padding:       8px 14px;
+  background:    var(--ailcl-error-bg);
+  border-bottom: 1px solid var(--ailcl-error-border);
+  color:         var(--ailcl-error);
+  font-size:     12px;
+  flex-shrink:   0;
+  animation:     slideDown 0.2s ease both;
+}
+
+.previewLoadingState {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  flex:            1;
+  gap:             14px;
+  color:           var(--ailcl-text-muted);
+  font-size:       13px;
+}
+
+.pptxNote {
+  padding:       12px 16px;
+  background:    var(--ailcl-surface);
+  border-bottom: 1px solid var(--ailcl-border);
+  font-size:     13px;
+  color:         var(--ailcl-text-secondary);
+  flex-shrink:   0;
+}
+.pptxNote strong { color: var(--ailcl-text-primary); }
+
+/* ── Library-powered download buttons ───────────────────────────── */
+.downloadDocxBtn,
+.downloadPptxBtn {
+  display:         flex;
+  align-items:     center;
+  gap:             6px;
+  padding:         5px 12px;
+  border-radius:   var(--ailcl-radius-xs);
+  font-size:       11px;
+  font-weight:     600;
+  cursor:          pointer;
+  border:          1px solid;
+  transition:      all var(--ailcl-transition);
+  white-space:     nowrap;
+}
+.downloadDocxBtn svg,
+.downloadPptxBtn svg { width: 12px; height: 12px; }
+
+.downloadDocxBtn {
+  background:    rgba(59, 130, 246, 0.10);
+  color:         #3b82f6;
+  border-color:  rgba(59, 130, 246, 0.30);
+}
+.downloadDocxBtn:hover:not(:disabled) { background: rgba(59, 130, 246, 0.20); }
+
+.downloadPptxBtn {
+  background:    rgba(249, 115, 22, 0.10);
+  color:         #f97316;
+  border-color:  rgba(249, 115, 22, 0.30);
+}
+.downloadPptxBtn:hover:not(:disabled) { background: rgba(249, 115, 22, 0.20); }
+
+.downloadDocxBtn:disabled,
+.downloadPptxBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Streaming badge (shown during artifact generation) ──────────── */
+.streamingBadge {
+  display:     inline-flex;
+  align-items: center;
+  gap:         5px;
+  font-size:   10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color:       var(--ailcl-primary);
+  background:  var(--ailcl-primary-light);
+  padding:     2px 8px 2px 6px;
+  border-radius: var(--ailcl-radius-pill);
+  animation:   streamPulse 1.6s ease-in-out infinite;
+}
+
+.streamingDot {
+  width:         6px;
+  height:        6px;
+  border-radius: 50%;
+  background:    var(--ailcl-primary);
+  flex-shrink:   0;
+  animation:     streamPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes streamPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+
+.pptxPreviewNote {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  justify-content: center;
+  flex:            1;
+  gap:             14px;
+  padding:         40px 24px;
+  text-align:      center;
+  color:           var(--ailcl-text-muted);
+  font-size:       13px;
+}
+.pptxPreviewNote span { font-size: 40px; }
+.pptxPreviewNote p    { margin: 0; max-width: 260px; line-height: 1.5; }
+
+.downloadBtnLarge {
+  padding:       10px 22px;
+  background:    var(--ailcl-primary);
+  color:         #fff;
+  border:        none;
+  border-radius: var(--ailcl-radius-pill);
+  font-size:     14px;
+  font-weight:   600;
+  cursor:        pointer;
+  transition:    all var(--ailcl-transition);
+}
+.downloadBtnLarge:hover:not(:disabled) {
+  background: var(--ailcl-primary-hover);
+  transform:  translateY(-1px);
+}
+.downloadBtnLarge:disabled { opacity: 0.5; cursor: not-allowed; }

@@ -1,0 +1,276 @@
+/* ── Sidebar wrapper ─────────────────────────────────────────────── */
+.sidebar {
+  display:        flex;
+  flex-direction: column;
+  width:          240px;
+  min-width:      240px;
+  height:         100%;
+  background:     var(--ailcl-sidebar-bg, #1a1f2e);
+  border-right:   1px solid var(--ailcl-sidebar-border, rgba(255,255,255,0.08));
+  flex-shrink:    0;
+  overflow:       hidden;
+  transition:     width 220ms ease, min-width 220ms ease;
+}
+
+.sidebar.collapsed {
+  width:     48px;
+  min-width: 48px;
+}
+
+/* ── Top bar ─────────────────────────────────────────────────────── */
+.sidebarTop {
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  padding:         14px 10px 10px 14px;
+  gap:             8px;
+  flex-shrink:     0;
+}
+
+.sidebarBrand {
+  font-size:   11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color:       var(--ailcl-sidebar-muted, rgba(255,255,255,0.35));
+  white-space: nowrap;
+  overflow:    hidden;
+}
+
+.collapseBtn {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  width:           28px;
+  height:          28px;
+  flex-shrink:     0;
+  border:          none;
+  border-radius:   6px;
+  background:      transparent;
+  color:           var(--ailcl-sidebar-muted, rgba(255,255,255,0.4));
+  cursor:          pointer;
+  transition:      background 150ms, color 150ms;
+}
+
+.collapseBtn svg { width: 18px; height: 18px; }
+.collapseBtn:hover {
+  background: rgba(255,255,255,0.08);
+  color:      rgba(255,255,255,0.8);
+}
+
+/* ── New chat button ─────────────────────────────────────────────── */
+.newChatBtn {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+  margin:      4px 10px 12px;
+  padding:     9px 12px;
+  border:      1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  background:  transparent;
+  color:       rgba(255,255,255,0.75);
+  font-size:   13px;
+  font-weight: 500;
+  cursor:      pointer;
+  transition:  background 150ms, border-color 150ms, color 150ms;
+  flex-shrink: 0;
+  font-family: var(--ailcl-font);
+  white-space: nowrap;
+}
+
+.newChatBtn:hover {
+  background:   rgba(255,255,255,0.07);
+  border-color: rgba(255,255,255,0.22);
+  color:        rgba(255,255,255,0.95);
+}
+
+.newChatIcon {
+  width:    14px;
+  height:   14px;
+  flex-shrink: 0;
+}
+
+/* ── Session list ────────────────────────────────────────────────── */
+.sessionList {
+  flex:       1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding:    0 6px 12px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+
+.sessionList::-webkit-scrollbar       { width: 4px; }
+.sessionList::-webkit-scrollbar-track { background: transparent; }
+.sessionList::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+/* ── Date group ──────────────────────────────────────────────────── */
+.group { margin-bottom: 4px; }
+
+.groupLabel {
+  display:     block;
+  padding:     8px 8px 4px;
+  font-size:   10px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color:       var(--ailcl-sidebar-muted, rgba(255,255,255,0.28));
+  white-space: nowrap;
+}
+
+/* ── Session item ────────────────────────────────────────────────── */
+.sessionItem {
+  display:       flex;
+  align-items:   center;
+  gap:           8px;
+  padding:       8px 8px 8px 10px;
+  border-radius: 7px;
+  cursor:        pointer;
+  position:      relative;
+  transition:    background 130ms;
+  min-width:     0;
+}
+
+.sessionItem:hover              { background: rgba(255,255,255,0.06); }
+.sessionItemActive              { background: var(--ailcl-sidebar-active, rgba(255,255,255,0.10)) !important; }
+.sessionItemActive .sessionTitle { color: rgba(255,255,255,0.95) !important; }
+
+.sessionIcon {
+  flex-shrink: 0;
+  width:       14px;
+  height:      14px;
+  color:       rgba(255,255,255,0.3);
+}
+.sessionItemActive .sessionIcon { color: rgba(255,255,255,0.6); }
+
+.sessionTitle {
+  flex:        1;
+  font-size:   13px;
+  color:       rgba(255,255,255,0.65);
+  white-space: nowrap;
+  overflow:    hidden;
+  text-overflow: ellipsis;
+  min-width:   0;
+  line-height: 1.35;
+}
+
+/* ── Action buttons (visible on hover) ──────────────────────────── */
+.sessionActions {
+  display:     flex;
+  align-items: center;
+  gap:         2px;
+  flex-shrink: 0;
+  opacity:     0;
+  transition:  opacity 150ms;
+}
+
+.sessionItem:hover .sessionActions,
+.sessionItemActive .sessionActions {
+  opacity: 1;
+}
+
+.sessionBtn {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  width:           22px;
+  height:          22px;
+  border:          none;
+  border-radius:   5px;
+  background:      transparent;
+  color:           rgba(255,255,255,0.4);
+  cursor:          pointer;
+  padding:         0;
+  transition:      background 130ms, color 130ms;
+}
+
+.sessionBtn svg     { width: 11px; height: 11px; }
+.sessionBtn:hover   { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); }
+
+.sessionBtnDelete:hover {
+  background: rgba(239,68,68,0.18);
+  color:      #f87171;
+}
+
+/* ── Rename input ─────────────────────────────────────────────────── */
+.renameInput {
+  flex:         1;
+  background:   rgba(255,255,255,0.08);
+  border:       1px solid rgba(255,255,255,0.2);
+  border-radius: 4px;
+  color:        rgba(255,255,255,0.9);
+  font-size:    13px;
+  padding:      2px 6px;
+  outline:      none;
+  min-width:    0;
+  font-family:  var(--ailcl-font);
+}
+
+.renameInput:focus { border-color: var(--ailcl-primary, #6366f1); }
+
+/* ── Empty state ──────────────────────────────────────────────────── */
+.emptyMsg {
+  padding:   20px 12px;
+  font-size: 12px;
+  color:     rgba(255,255,255,0.3);
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* ── Light theme — sidebar uses the same primary blue as the header ── */
+:global(.ailcl-theme-light) .sidebar {
+  background:        var(--ailcl-header-bg, #2e3192);
+  border-right-color: rgba(0,0,0,0.15);
+}
+
+/* Text / icon colors — white on blue, same as header */
+:global(.ailcl-theme-light) .sidebarBrand     { color: rgba(255,255,255,0.5); }
+:global(.ailcl-theme-light) .collapseBtn      { color: rgba(255,255,255,0.55); }
+:global(.ailcl-theme-light) .collapseBtn:hover {
+  background: rgba(255,255,255,0.12);
+  color:      rgba(255,255,255,0.95);
+}
+
+/* New Chat button */
+:global(.ailcl-theme-light) .newChatBtn {
+  border-color: rgba(255,255,255,0.25);
+  color:        rgba(255,255,255,0.85);
+}
+:global(.ailcl-theme-light) .newChatBtn:hover {
+  background:   rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.45);
+  color:        #ffffff;
+}
+
+/* Group labels */
+:global(.ailcl-theme-light) .groupLabel { color: rgba(255,255,255,0.38); }
+
+/* Session items */
+:global(.ailcl-theme-light) .sessionTitle      { color: rgba(255,255,255,0.75); }
+:global(.ailcl-theme-light) .sessionIcon       { color: rgba(255,255,255,0.35); }
+:global(.ailcl-theme-light) .sessionItem:hover { background: rgba(255,255,255,0.1); }
+:global(.ailcl-theme-light) .sessionItemActive { background: rgba(255,255,255,0.16) !important; }
+:global(.ailcl-theme-light) .sessionItemActive .sessionTitle { color: #ffffff !important; font-weight: 500; }
+:global(.ailcl-theme-light) .sessionItemActive .sessionIcon  { color: rgba(255,255,255,0.7); }
+
+/* Action buttons */
+:global(.ailcl-theme-light) .sessionBtn       { color: rgba(255,255,255,0.45); }
+:global(.ailcl-theme-light) .sessionBtn:hover {
+  background: rgba(255,255,255,0.14);
+  color:      rgba(255,255,255,0.9);
+}
+:global(.ailcl-theme-light) .sessionBtnDelete:hover {
+  background: rgba(239,68,68,0.25);
+  color:      #fca5a5;
+}
+
+/* Rename input */
+:global(.ailcl-theme-light) .renameInput {
+  background:   rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.3);
+  color:        #ffffff;
+}
+:global(.ailcl-theme-light) .renameInput:focus { border-color: rgba(255,255,255,0.7); }
+
+/* Empty state */
+:global(.ailcl-theme-light) .emptyMsg { color: rgba(255,255,255,0.35); }

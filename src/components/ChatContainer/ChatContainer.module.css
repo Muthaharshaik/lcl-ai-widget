@@ -1,3 +1,4 @@
+/* ── Container ───────────────────────────────────────────────────── */
 .container {
   display:        flex;
   flex-direction: column;
@@ -10,98 +11,272 @@
   font-family:    var(--ailcl-font);
   overflow:       hidden;
   position:       relative;
+  transition:     background var(--ailcl-transition), border-color var(--ailcl-transition),
+                  box-shadow var(--ailcl-transition);
 }
 
-/* ── Header ─────────────────────────────────────────────────────────── */
+/* ── Header ──────────────────────────────────────────────────────── */
+/* ── Header ──────────────────────────────────────────────────────── */
 .header {
   display:         flex;
   align-items:     center;
   justify-content: space-between;
-  padding:         14px 18px;
-  background:      var( --ailcl-primary-lcl);
-  border-bottom:   1px solid var(--ailcl-border);
+  padding:         12px 16px;
+  background:      var(--ailcl-header-bg);
+  border-bottom:   1px solid var(--ailcl-header-border);
   flex-shrink:     0;
+  position:        relative;
+  z-index:         1;
+  gap:             12px;
+  transition:      background var(--ailcl-transition), border-color var(--ailcl-transition);
+}
+
+/* Left accent line — white in light, brand in dark */
+.header::before {
+  content:       '';
+  position:      absolute;
+  left:          0;
+  top:           20%;
+  bottom:        20%;
+  width:         3px;
+  background:    rgba(255, 255, 255, 0.5);
+  border-radius: 0 3px 3px 0;
 }
 
 .headerLeft {
   display:     flex;
   align-items: center;
   gap:         10px;
+  min-width:   0;
 }
 
-.onlineDot {
-  width:         8px;
-  height:        8px;
-  border-radius: 50%;
-  background:    #22c55e;
-  box-shadow:    0 0 0 2px rgba(34, 197, 94, 0.25);
-  animation:     pulse 2s infinite;
+/* Brand mark — bot icon container */
+.brandMark {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  width:           36px;
+  height:          36px;
+  border-radius:   var(--ailcl-radius-xs);
+  background:      rgba(255, 255, 255, 0.18);
+  color:           #ffffff;
+  flex-shrink:     0;
+  border:          1px solid rgba(255, 255, 255, 0.2);
+  transition:      background var(--ailcl-transition);
 }
+.brandMark:hover { background: rgba(255, 255, 255, 0.26); }
+.brandMark svg   { width: 20px; height: 20px; }
 
-@keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25); }
-  50%       { box-shadow: 0 0 0 5px rgba(34, 197, 94, 0.08); }
+.titleGroup {
+  display:        flex;
+  flex-direction: column;
+  gap:            2px;
+  min-width:      0;
 }
 
 .title {
-  font-size:   bold;
-  font-weight: 600;
-  color:       #ffffff;
-  margin:      0;
-  line-height: 1;
+  font-size:      14px;
+  font-weight:    700;
+  color:          var(--ailcl-header-text);
+  margin:         0;
+  line-height:    1.2;
+  white-space:    nowrap;
+  overflow:       hidden;
+  text-overflow:  ellipsis;
+  letter-spacing: -0.01em;
 }
 
+.statusRow {
+  display:     flex;
+  align-items: center;
+  gap:         5px;
+}
+
+.onlineDot {
+  width:         6px;
+  height:        6px;
+  border-radius: 50%;
+  background:    var(--ailcl-header-dot);
+  animation:     onlinePulse 2.5s ease-in-out infinite;
+  flex-shrink:   0;
+}
+
+@keyframes onlinePulse {
+  0%, 100% { opacity: 1;   transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(0.85); }
+}
+
+.statusText {
+  font-size:      10px;
+  font-weight:    500;
+  color:          var(--ailcl-header-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ── Header right buttons ─────────────────────────────────────────── */
+.headerRight {
+  display:     flex;
+  align-items: center;
+  gap:         6px;
+  flex-shrink: 0;
+}
+
+/* Theme toggle */
+.themeToggle {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  width:           32px;
+  height:          32px;
+  border:          1px solid rgba(255, 255, 255, 0.2);
+  border-radius:   var(--ailcl-radius-xs);
+  background:      var(--ailcl-header-btn);
+  color:           var(--ailcl-header-btn-color);
+  cursor:          pointer;
+  transition:      all var(--ailcl-transition);
+}
+.themeToggle svg { width: 15px; height: 15px; }
+.themeToggle:hover {
+  background: var(--ailcl-header-btn-hover);
+  transform:  scale(1.06);
+}
+
+.themeIcon {
+  display:     flex;
+  align-items: center;
+  transition:  transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.sunActive  { transform: rotate(0deg); }
+.moonActive { transform: rotate(-20deg); }
+
+/* Clear button */
 .clearBtn {
   display:         flex;
   align-items:     center;
   justify-content: center;
   width:           32px;
   height:          32px;
-  border:          none;
+  border:          1px solid rgba(255, 255, 255, 0.2);
   border-radius:   var(--ailcl-radius-xs);
-  background:      transparent;
-  color:           var(--ailcl-text-muted);
+  background:      var(--ailcl-header-btn);
+  color:           var(--ailcl-header-btn-color);
   cursor:          pointer;
-  transition:      background var(--ailcl-transition), color var(--ailcl-transition);
+  transition:      all var(--ailcl-transition);
 }
-.clearBtn svg     { width: 15px; height: 15px; }
-.clearBtn:hover   { background: var(--ailcl-error-bg); color: var(--ailcl-error); }
-.clearBtn:disabled{ opacity: 0.35; cursor: not-allowed; }
+.clearBtn svg { width: 14px; height: 14px; }
+.clearBtn:hover:not(:disabled) {
+  background:   rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.4);
+  color:        #fca5a5;
+  transform:    scale(1.06);
+}
+.clearBtn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-/* ── Error banner ────────────────────────────────────────────────────── */
+/* ── Error banner ─────────────────────────────────────────────────── */
 .errorBanner {
   display:         flex;
   align-items:     center;
   justify-content: space-between;
-  padding:         10px 16px;
+  padding:         9px 16px;
   background:      var(--ailcl-error-bg);
   border-bottom:   1px solid var(--ailcl-error-border);
-  color:           var(--ailcl-error);
-  font-size:       13px;
   flex-shrink:     0;
   gap:             8px;
-}
-.errorBanner button {
-  background: none;
-  border:     none;
-  color:      var(--ailcl-error);
-  cursor:     pointer;
-  font-size:  18px;
-  line-height: 1;
-  padding:    0 4px;
-  flex-shrink: 0;
+  animation:       slideDown 0.22s ease both;
 }
 
-/* ── Messages + Footer ───────────────────────────────────────────────── */
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.errorText {
+  font-size:  13px;
+  color:      var(--ailcl-error);
+  font-weight: 500;
+}
+
+.errorDismiss {
+  background:  none;
+  border:      none;
+  color:       var(--ailcl-error);
+  cursor:      pointer;
+  font-size:   18px;
+  line-height: 1;
+  padding:     0 2px;
+  opacity:     0.7;
+  transition:  opacity var(--ailcl-transition);
+  flex-shrink: 0;
+}
+.errorDismiss:hover { opacity: 1; }
+
+/* ── Messages area ────────────────────────────────────────────────── */
 .messages {
   flex:       1;
   overflow-y: auto;
   overflow-x: hidden;
-  min-height: 0;  /* critical for flex child scrolling */
+  min-height: 0;
+  scroll-behavior: smooth;
 }
 
+/* Subtle scrollbar */
+.messages::-webkit-scrollbar       { width: 4px; }
+.messages::-webkit-scrollbar-track { background: transparent; }
+.messages::-webkit-scrollbar-thumb {
+  background:    var(--ailcl-border);
+  border-radius: 4px;
+}
+.messages::-webkit-scrollbar-thumb:hover { background: var(--ailcl-text-muted); }
+
+/* ── Footer ───────────────────────────────────────────────────────── */
 .footer {
   flex-shrink:  0;
   border-top:   1px solid var(--ailcl-border);
   background:   var(--ailcl-bg);
+}
+
+/* ADD these two rules — everything else in the file stays the same */
+
+.layout {
+  display:    flex;
+  flex:       1;
+  overflow:   hidden;
+  min-height: 0;
+}
+
+.chatColumn {
+  display:        flex;
+  flex-direction: column;
+  flex:           1;
+  min-width:      0;      /* prevents flex child from overflowing */
+  overflow:       hidden;
+}
+
+/* ── Reopen artifact button ───────────────────────────────────────── */
+.reopenBtn {
+  display:         flex;
+  align-items:     center;
+  gap:             6px;
+  padding:         5px 10px 5px 8px;
+  border:          1px solid rgba(255,255,255,0.25);
+  border-radius:   var(--ailcl-radius-xs);
+  background:      rgba(255,255,255,0.14);
+  color:           rgba(255,255,255,0.90);
+  font-size:       12px;
+  font-weight:     500;
+  cursor:          pointer;
+  transition:      all var(--ailcl-transition);
+  max-width:       160px;
+  overflow:        hidden;
+}
+.reopenBtn svg  { width: 13px; height: 13px; flex-shrink: 0; }
+.reopenBtn:hover {
+  background: rgba(255,255,255,0.24);
+  transform:  scale(1.04);
+}
+.reopenLabel {
+  white-space:    nowrap;
+  overflow:       hidden;
+  text-overflow:  ellipsis;
 }

@@ -1,24 +1,31 @@
 .area {
-  padding:    12px 14px 8px;
+  padding:    10px 12px 8px;
   background: var(--ailcl-bg);
 }
-.areaDisabled { opacity: 0.7; }
+.areaDisabled { opacity: 0.65; pointer-events: none; }
 
-/* ── File errors ─────────────────────────────────────────────────────── */
+/* File errors */
 .errors {
   display:       flex;
   align-items:   center;
   gap:           8px;
   flex-wrap:     wrap;
-  padding:       6px 10px;
+  padding:       7px 10px;
   background:    var(--ailcl-error-bg);
   border:        1px solid var(--ailcl-error-border);
   border-radius: var(--ailcl-radius-xs);
   margin-bottom: 8px;
   font-size:     12px;
+  animation:     slideDown 0.2s ease both;
 }
-.errorMsg     { color: var(--ailcl-error); }
-.dismissBtn   {
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.errorMsg    { color: var(--ailcl-error); font-weight: 500; }
+.dismissBtn  {
   margin-left: auto;
   background:  none;
   border:      none;
@@ -30,30 +37,31 @@
   flex-shrink: 0;
 }
 
-/* ── Staged files ────────────────────────────────────────────────────── */
+/* Staged files */
 .stagedFiles {
   padding-bottom: 8px;
-  border-bottom:  1px solid var(--ailcl-border);
+  border-bottom:  1px solid var(--ailcl-border-light);
   margin-bottom:  8px;
 }
 
-/* ── Input row ───────────────────────────────────────────────────────── */
+/* ── Input row ────────────────────────────────────────────────────── */
 .row {
-  display:     flex;
-  align-items: flex-end;
-  gap:         8px;
-  background:  var(--ailcl-surface);
-  border:      1.5px solid var(--ailcl-border);
+  display:       flex;
+  align-items:   flex-end;
+  gap:           6px;
+  background:    var(--ailcl-surface);
+  border:        1.5px solid var(--ailcl-border);
   border-radius: var(--ailcl-radius-sm);
-  padding:     6px 8px;
-  transition:  border-color var(--ailcl-transition), box-shadow var(--ailcl-transition);
+  padding:       6px 6px 6px 10px;
+  transition:    border-color var(--ailcl-transition), box-shadow var(--ailcl-transition);
 }
 .row:focus-within {
   border-color: var(--ailcl-primary);
   box-shadow:   var(--ailcl-shadow-input);
+  background:   var(--ailcl-bg);
 }
 
-/* ── Textarea ────────────────────────────────────────────────────────── */
+/* Textarea */
 .textarea {
   flex:        1;
   border:      none;
@@ -62,19 +70,39 @@
   resize:      none;
   font-family: var(--ailcl-font);
   font-size:   14px;
-  line-height: 1.5;
+  line-height: 1.55;
   color:       var(--ailcl-text-primary);
-  padding:     4px 0;
-  min-height:  28px;
+  padding:     5px 0;
+  min-height:  30px;
   max-height:  180px;
   overflow-y:  auto;
 }
 .textarea::placeholder { color: var(--ailcl-text-muted); }
-.textarea:disabled     { cursor: not-allowed; }
 
-/* ── Buttons ─────────────────────────────────────────────────────────── */
-.sendBtn,
+/* ── Attach button (icon ONLY) ────────────────────────────────────── */
 .attachBtn {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  width:           32px;
+  height:          32px;
+  border:          none;
+  border-radius:   var(--ailcl-radius-xs);
+  background:      transparent;
+  color:           var(--ailcl-text-muted);
+  cursor:          pointer;
+  flex-shrink:     0;
+  transition:      all var(--ailcl-transition);
+}
+.attachBtn svg { width: 18px; height: 18px; }
+.attachBtn:hover {
+  background: var(--ailcl-primary-light);
+  color:      var(--ailcl-primary);
+  transform:  scale(1.08);
+}
+
+/* ── Send / Cancel button ─────────────────────────────────────────── */
+.sendBtn {
   display:         flex;
   align-items:     center;
   justify-content: center;
@@ -84,42 +112,39 @@
   border-radius:   var(--ailcl-radius-xs);
   cursor:          pointer;
   flex-shrink:     0;
-  transition:      background var(--ailcl-transition), color var(--ailcl-transition),
-                   transform var(--ailcl-transition);
+  transition:      all var(--ailcl-transition-spring);
+  background:      var(--ailcl-primary);
+  color:           #ffffff;
 }
-.sendBtn {
-  background: var(--ailcl-primary);
-  color:      var(--ailcl-primary-text);
-}
-.sendBtn svg  { width: 16px; height: 16px; }
+.sendBtn svg { width: 15px; height: 15px; }
 .sendBtn:hover:not(:disabled) {
   background: var(--ailcl-primary-hover);
-  transform:  translateY(-1px);
+  transform:  scale(1.08) translateY(-1px);
+  box-shadow: 0 4px 14px var(--ailcl-primary-glow);
 }
-.sendBtn:disabled { opacity: 0.45; cursor: not-allowed; }
+.sendBtn:active:not(:disabled) { transform: scale(0.96); }
+.sendBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-.cancelBtn { background: var(--ailcl-error); color: #fff; }
-.cancelBtn:hover { background: #dc2626; transform: translateY(-1px); }
+.cancelBtn {
+  background: var(--ailcl-error) !important;
+  animation:  pulsateRed 1.2s ease-in-out infinite;
+}
+.cancelBtn:hover { background: #b91c1c !important; }
 
-.attachBtn {
-  background: transparent;
-  color:      var(--ailcl-text-muted);
+@keyframes pulsateRed {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.25); }
+  50%       { box-shadow: 0 0 0 5px rgba(220, 38, 38, 0); }
 }
-.attachBtn svg     { width: 18px; height: 18px; }
-.attachBtn:hover:not(:disabled) {
-  background: var(--ailcl-surface-2);
-  color:      var(--ailcl-text-primary);
-}
-.attachBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .hiddenInput { display: none; }
 
-/* ── Keyboard hint ───────────────────────────────────────────────────── */
+/* Keyboard hint */
 .hint {
   margin:      5px 0 0;
-  font-size:   11px;
+  font-size:   10px;
   color:       var(--ailcl-text-muted);
   text-align:  center;
+  line-height: 1.4;
 }
 .hint kbd {
   display:       inline-block;
@@ -127,7 +152,261 @@
   border:        1px solid var(--ailcl-border);
   border-radius: 3px;
   font-family:   var(--ailcl-mono);
-  font-size:     10px;
+  font-size:     9px;
   background:    var(--ailcl-surface-2);
   color:         var(--ailcl-text-secondary);
 }
+
+/* ── Slash command menu ───────────────────────────────────────────── */
+.commandMenu {
+  position:      absolute;
+  bottom:        calc(100% + 6px);
+  left:          0;
+  right:         0;
+  background:    var(--ailcl-bg);
+  border:        1px solid var(--ailcl-border);
+  border-radius: var(--ailcl-radius-sm);
+  box-shadow:    var(--ailcl-shadow);
+  z-index:       100;
+  overflow:      hidden;
+  animation:     cmdMenuFade 0.15s ease both;
+}
+
+@keyframes cmdMenuFade {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.commandMenuHeader {
+  padding:       6px 14px;
+  font-size:     10px;
+  font-weight:   600;
+  color:         var(--ailcl-text-muted);
+  border-bottom: 1px solid var(--ailcl-border);
+  letter-spacing: 0.04em;
+}
+
+.commandItem {
+  display:     flex;
+  align-items: center;
+  gap:         12px;
+  width:       100%;
+  padding:     10px 14px;
+  border:      none;
+  background:  transparent;
+  cursor:      pointer;
+  text-align:  left;
+  transition:  background var(--ailcl-transition);
+}
+.commandItem:hover,
+.commandItemActive { background: var(--ailcl-surface); }
+
+.commandItemIcon {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  width:           36px;
+  height:          36px;
+  border-radius:   var(--ailcl-radius-xs);
+  font-size:       18px;
+  flex-shrink:     0;
+}
+
+.commandItemText {
+  display:        flex;
+  flex-direction: column;
+  gap:            2px;
+  min-width:      0;
+}
+
+.commandItemTop {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+}
+
+.commandItemCmd {
+  font-size:   12px;
+  font-weight: 700;
+  font-family: var(--ailcl-mono);
+  color:       var(--ailcl-primary);
+}
+
+.commandItemLabel {
+  font-size:   13px;
+  font-weight: 600;
+  color:       var(--ailcl-text-primary);
+}
+
+.commandItemDesc {
+  font-size: 11px;
+  color:     var(--ailcl-text-muted);
+}
+
+/* ── Active command badge ─────────────────────────────────────────── */
+.activeCmdBadge {
+  display:       flex;
+  align-items:   center;
+  gap:           7px;
+  margin-bottom: 6px;
+  padding:       5px 10px;
+  background:    var(--ailcl-surface-2);
+  border:        1px solid var(--ailcl-border);
+  border-radius: var(--ailcl-radius-xs);
+  width:         fit-content;
+  font-size:     12px;
+  animation:     cmdBadgeFade 0.18s ease both;
+}
+
+@keyframes cmdBadgeFade {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.activeCmdName {
+  font-family: var(--ailcl-mono);
+  font-weight: 700;
+  font-size:   12px;
+}
+
+.activeCmdLabel {
+  font-size: 12px;
+  color:     var(--ailcl-text-secondary);
+}
+
+.activeCmdClear {
+  background: none;
+  border:     none;
+  cursor:     pointer;
+  color:      var(--ailcl-text-muted);
+  font-size:  12px;
+  padding:    0;
+  margin-left: 2px;
+  transition: color var(--ailcl-transition);
+}
+.activeCmdClear:hover { color: var(--ailcl-error); }
+
+/* ── Slash command menu (position:fixed set inline from getBoundingClientRect) ── */
+.commandMenu {
+  background:    var(--ailcl-bg);
+  border:        1px solid var(--ailcl-border);
+  border-radius: var(--ailcl-radius-sm);
+  box-shadow:    var(--ailcl-shadow);
+  overflow:      hidden;
+  animation:     cmdFade 0.15s ease both;
+}
+
+@keyframes cmdFade {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.commandMenuHeader {
+  padding:        7px 14px;
+  font-size:      10px;
+  font-weight:    600;
+  color:          var(--ailcl-text-muted);
+  border-bottom:  1px solid var(--ailcl-border);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.commandItem {
+  display:     flex;
+  align-items: center;
+  gap:         12px;
+  width:       100%;
+  padding:     10px 14px;
+  border:      none;
+  background:  transparent;
+  cursor:      pointer;
+  text-align:  left;
+  transition:  background var(--ailcl-transition);
+}
+.commandItem:hover,
+.commandItemActive { background: var(--ailcl-surface); }
+
+.commandItemIcon {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  width:           36px;
+  height:          36px;
+  border-radius:   var(--ailcl-radius-xs);
+  font-size:       18px;
+  flex-shrink:     0;
+}
+
+.commandItemText {
+  display:        flex;
+  flex-direction: column;
+  gap:            2px;
+  min-width:      0;
+}
+
+.commandItemTop {
+  display:     flex;
+  align-items: center;
+  gap:         8px;
+}
+
+.commandItemCmd {
+  font-size:   12px;
+  font-weight: 700;
+  font-family: var(--ailcl-mono);
+  color:       var(--ailcl-primary);
+}
+
+.commandItemLabel {
+  font-size:   13px;
+  font-weight: 600;
+  color:       var(--ailcl-text-primary);
+}
+
+.commandItemDesc {
+  font-size: 11px;
+  color:     var(--ailcl-text-muted);
+}
+
+/* Active command badge */
+.activeCmdBadge {
+  display:       flex;
+  align-items:   center;
+  gap:           7px;
+  margin-bottom: 7px;
+  padding:       5px 10px;
+  background:    var(--ailcl-surface-2);
+  border:        1px solid var(--ailcl-border);
+  border-radius: var(--ailcl-radius-xs);
+  width:         fit-content;
+  font-size:     12px;
+  animation:     cmdBadgeFade 0.18s ease both;
+}
+
+@keyframes cmdBadgeFade {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.activeCmdName {
+  font-family: var(--ailcl-mono);
+  font-weight: 700;
+  font-size:   12px;
+}
+
+.activeCmdLabel {
+  font-size: 12px;
+  color:     var(--ailcl-text-secondary);
+}
+
+.activeCmdClear {
+  background:  none;
+  border:      none;
+  cursor:      pointer;
+  color:       var(--ailcl-text-muted);
+  font-size:   12px;
+  padding:     0;
+  margin-left: 2px;
+  transition:  color var(--ailcl-transition);
+}
+.activeCmdClear:hover { color: var(--ailcl-error); }

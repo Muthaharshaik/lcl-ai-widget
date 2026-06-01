@@ -1,124 +1,136 @@
-/* ═══════════════════════════════════════════════════════════════════════════
-   AILCL Enterprise Chat Widget — Global Theme & Utility Styles
-   All colours are exposed as CSS custom properties.
-   Component-level layout lives in *.module.css files.
-═══════════════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════════
+   AILCL Enterprise Chat Widget
+   Brand primary: #2e3192
+   Theme is toggled in UI — no XML prop needed
+═══════════════════════════════════════════════════════════════════════ */
 
-/* ─── Light theme ─────────────────────────────────────────────────────── */
-.ailcl-theme-light,
-.ailcl-theme-auto {
-  --ailcl-primary:          #5b6af0;
-  --ailcl-primary-hover:    #4a58e0;
+/* ─── Light theme ─────────────────────────────────────────────────── */
+.ailcl-theme-light {
+  --ailcl-primary:          #2e3192;
+  --ailcl-primary-hover:    #252880;
+  --ailcl-primary-dark:     #1a1d5c;
+  --ailcl-primary-light:    #eef0ff;
+  --ailcl-primary-glow:     rgba(46, 49, 146, 0.14);
   --ailcl-primary-text:     #ffffff;
-  --ailcl-primary-lcl:      #2e3192;
 
   --ailcl-bg:               #ffffff;
-  --ailcl-surface:          #f8f9fc;
-  --ailcl-surface-2:        #eef0f8;
-  --ailcl-border:           #e2e5ef;
+  --ailcl-surface:          #f7f8ff;
+  --ailcl-surface-2:        #eef0ff;
+  --ailcl-border:           #dde0f5;
+  --ailcl-border-light:     #eef0ff;
 
-  --ailcl-text-primary:     #111827;
-  --ailcl-text-secondary:   #4b5563;
-  --ailcl-text-muted:       #9ca3af;
+  --ailcl-text-primary:     #0d0f2b;
+  --ailcl-text-secondary:   #454870;
+  --ailcl-text-muted:       #9397c0;
 
-  --ailcl-user-bg:          #5b6af0;
+  --ailcl-user-bg:          #2e3192;
   --ailcl-user-text:        #ffffff;
-  --ailcl-ai-bg:            #f0f2f8;
-  --ailcl-ai-text:          #111827;
+  --ailcl-ai-bg:            #f1f2fc;
+  --ailcl-ai-text:          #0d0f2b;
+  --ailcl-ai-border:        #e2e5f8;
 
-  --ailcl-avatar-ai-bg:     #e8eaff;
-  --ailcl-avatar-ai-color:  #5b6af0;
-  --ailcl-avatar-user-bg:   #5b6af0;
+  --ailcl-avatar-ai-bg:     #eef0ff;
+  --ailcl-avatar-ai-color:  #2e3192;
+  --ailcl-avatar-user-bg:   #2e3192;
   --ailcl-avatar-user-text: #ffffff;
 
-  --ailcl-error:            #ef4444;
+/* Header with brand color background */
+  --ailcl-header-bg:         #2e3192;
+  --ailcl-header-border:     #252880;
+  --ailcl-header-text:       #ffffff;
+  --ailcl-header-muted:      rgba(255, 255, 255, 0.60);
+  --ailcl-header-btn:        rgba(255, 255, 255, 0.14);
+  --ailcl-header-btn-hover:  rgba(255, 255, 255, 0.24);
+  --ailcl-header-btn-color:  rgba(255, 255, 255, 0.90);
+  --ailcl-header-dot:        #4ade80;
+
+  --ailcl-error:            #dc2626;
   --ailcl-error-bg:         #fef2f2;
-  --ailcl-error-border:     #fca5a5;
-  --ailcl-warning-bg:       #fffbeb;
-  --ailcl-warning-border:   #fcd34d;
-  --ailcl-warning-text:     #92400e;
+  --ailcl-error-border:     #fecaca;
 
-  --ailcl-shadow:           0 4px 24px rgba(91, 106, 240, 0.10), 0 1px 4px rgba(0,0,0,0.05);
-  --ailcl-shadow-sm:        0 2px 8px rgba(0,0,0,0.06);
-  --ailcl-shadow-input:     0 0 0 3px rgba(91, 106, 240, 0.15);
+  --ailcl-success:          #16a34a;
+  --ailcl-online:           #22c55e;
 
-  --ailcl-radius:           16px;
-  --ailcl-radius-sm:        10px;
-  --ailcl-radius-xs:        6px;
+  --ailcl-shadow:           0 8px 32px rgba(46, 49, 146, 0.12), 0 2px 8px rgba(0,0,0,0.04);
+  --ailcl-shadow-sm:        0 2px 10px rgba(46, 49, 146, 0.08);
+  --ailcl-shadow-input:     0 0 0 3px rgba(46, 49, 146, 0.15);
+  --ailcl-shadow-chip:      0 2px 8px rgba(46, 49, 146, 0.10);
 
-  --ailcl-font:             -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-  --ailcl-mono:             'JetBrains Mono', 'Fira Code', Consolas, 'Courier New', monospace;
+  --ailcl-radius:           18px;
+  --ailcl-radius-sm:        12px;
+  --ailcl-radius-xs:        7px;
+  --ailcl-radius-pill:      999px;
+
+  --ailcl-font:             -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+  --ailcl-mono:             'JetBrains Mono', 'Fira Code', Consolas, monospace;
   --ailcl-transition:       0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  --ailcl-transition-spring: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* ─── Dark theme ──────────────────────────────────────────────────────── */
+/* ─── Dark theme ──────────────────────────────────────────────────── */
 .ailcl-theme-dark {
-  --ailcl-primary:          #818cf8;
-  --ailcl-primary-hover:    #a5b4fc;
-  --ailcl-primary-text:     #1e1e3a;
-  --ailcl-primary-lcl:      #2e3192;
+  --ailcl-primary:          #6b6fd4;
+  --ailcl-primary-hover:    #8285e0;
+  --ailcl-primary-dark:     #4a4ea8;
+  --ailcl-primary-light:    #1a1c40;
+  --ailcl-primary-glow:     rgba(107, 111, 212, 0.22);
+  --ailcl-primary-text:     #ffffff;
 
-  --ailcl-bg:               #0e1016;
-  --ailcl-surface:          #161b27;
-  --ailcl-surface-2:        #1e2438;
-  --ailcl-border:           #2a3050;
+  --ailcl-bg:               #09090f;
+  --ailcl-surface:          #11121e;
+  --ailcl-surface-2:        #191b30;
+  --ailcl-border:           #22254a;
+  --ailcl-border-light:     #1a1d38;
 
-  --ailcl-text-primary:     #e8eaf6;
-  --ailcl-text-secondary:   #9ea3c0;
-  --ailcl-text-muted:       #6b708a;
+  --ailcl-text-primary:     #e8e9f8;
+  --ailcl-text-secondary:   #9395c0;
+  --ailcl-text-muted:       #5c5f88;
 
-  --ailcl-user-bg:          #4a58e0;
+  --ailcl-user-bg:          #3d41b0;
   --ailcl-user-text:        #ffffff;
-  --ailcl-ai-bg:            #1e2438;
-  --ailcl-ai-text:          #e8eaf6;
+  --ailcl-ai-bg:            #14162a;
+  --ailcl-ai-text:          #e8e9f8;
+  --ailcl-ai-border:        #22254a;
 
-  --ailcl-avatar-ai-bg:     #2a3050;
-  --ailcl-avatar-ai-color:  #818cf8;
-  --ailcl-avatar-user-bg:   #4a58e0;
+  --ailcl-avatar-ai-bg:     #1e2040;
+  --ailcl-avatar-ai-color:  #6b6fd4;
+  --ailcl-avatar-user-bg:   #3d41b0;
   --ailcl-avatar-user-text: #ffffff;
+
+/* Header stays dark in dark mode */
+  --ailcl-header-bg:         #0d0e1c;
+  --ailcl-header-border:     #1e2040;
+  --ailcl-header-text:       #e8e9f8;
+  --ailcl-header-muted:      #5c5f88;
+  --ailcl-header-btn:        transparent;
+  --ailcl-header-btn-hover:  rgba(107, 111, 212, 0.18);
+  --ailcl-header-btn-color:  #9395c0;
+  --ailcl-header-dot:        #4ade80;
 
   --ailcl-error:            #f87171;
-  --ailcl-error-bg:         #2d1616;
-  --ailcl-error-border:     #7f1d1d;
-  --ailcl-warning-bg:       #2d2000;
-  --ailcl-warning-border:   #b45309;
-  --ailcl-warning-text:     #fcd34d;
+  --ailcl-error-bg:         #1e0c0c;
+  --ailcl-error-border:     #5b1414;
 
-  --ailcl-shadow:           0 4px 32px rgba(0,0,0,0.5);
+  --ailcl-success:          #4ade80;
+  --ailcl-online:           #4ade80;
+
+  --ailcl-shadow:           0 8px 40px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.4);
   --ailcl-shadow-sm:        0 2px 12px rgba(0,0,0,0.4);
-  --ailcl-shadow-input:     0 0 0 3px rgba(129, 140, 248, 0.2);
+  --ailcl-shadow-input:     0 0 0 3px rgba(107, 111, 212, 0.22);
+  --ailcl-shadow-chip:      0 2px 8px rgba(0,0,0,0.35);
+
+  --ailcl-radius:           18px;
+  --ailcl-radius-sm:        12px;
+  --ailcl-radius-xs:        7px;
+  --ailcl-radius-pill:      999px;
+
+  --ailcl-font:             -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+  --ailcl-mono:             'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  --ailcl-transition:       0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  --ailcl-transition-spring: 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* ─── Auto (respect OS preference) ───────────────────────────────────── */
-@media (prefers-color-scheme: dark) {
-  .ailcl-theme-auto {
-    --ailcl-primary:         #818cf8;
-    --ailcl-primary-hover:   #a5b4fc;
-    --ailcl-primary-text:    #1e1e3a;
-    --ailcl-primary-lcl:     #2e3192;
-    --ailcl-bg:              #0e1016;
-    --ailcl-surface:         #161b27;
-    --ailcl-surface-2:       #1e2438;
-    --ailcl-border:          #2a3050;
-    --ailcl-text-primary:    #e8eaf6;
-    --ailcl-text-secondary:  #9ea3c0;
-    --ailcl-text-muted:      #6b708a;
-    --ailcl-user-bg:         #4a58e0;
-    --ailcl-user-text:       #ffffff;
-    --ailcl-ai-bg:           #1e2438;
-    --ailcl-ai-text:         #e8eaf6;
-    --ailcl-avatar-ai-bg:    #2a3050;
-    --ailcl-avatar-ai-color: #818cf8;
-    --ailcl-primary-lcl:     #2e3192;
-    --ailcl-shadow:          0 4px 32px rgba(0,0,0,0.5);
-    --ailcl-shadow-input:    0 0 0 3px rgba(129, 140, 248, 0.2);
-    --ailcl-error:           #f87171;
-    --ailcl-error-bg:        #2d1616;
-    --ailcl-error-border:    #7f1d1d;
-  }
-}
-
-/* ─── Error boundary (global class, no module) ───────────────────────── */
+/* ─── Error boundary ─────────────────────────────────────────────── */
 .ailcl-error-boundary {
   display:         flex;
   flex-direction:  column;
@@ -127,8 +139,8 @@
   padding:         40px 24px;
   gap:             12px;
   background:      var(--ailcl-error-bg, #fef2f2);
-  border:          1px solid var(--ailcl-error-border, #fca5a5);
-  border-radius:   var(--ailcl-radius, 16px);
+  border:          1px solid var(--ailcl-error-border, #fecaca);
+  border-radius:   var(--ailcl-radius, 18px);
   text-align:      center;
   font-family:     var(--ailcl-font);
 }
@@ -136,41 +148,44 @@
 .ailcl-error-boundary__title {
   font-size:   16px;
   font-weight: 600;
-  color:       var(--ailcl-error, #ef4444);
+  color:       var(--ailcl-error);
   margin:      0;
 }
 .ailcl-error-boundary__message {
-  font-size: 14px;
-  color:     var(--ailcl-text-secondary, #4b5563);
-  margin:    0;
-  max-width: 320px;
+  font-size:  14px;
+  color:      var(--ailcl-text-secondary, #454870);
+  margin:     0;
+  max-width:  300px;
+  line-height: 1.5;
 }
 .ailcl-error-boundary__btn {
   margin-top:    8px;
-  padding:       8px 20px;
-  background:    var(--ailcl-error, #ef4444);
+  padding:       9px 22px;
+  background:    var(--ailcl-error);
   color:         #fff;
   border:        none;
-  border-radius: var(--ailcl-radius-sm, 10px);
+  border-radius: var(--ailcl-radius-pill);
   font-size:     14px;
+  font-weight:   500;
   cursor:        pointer;
-  transition:    opacity var(--ailcl-transition, 0.18s);
+  transition:    opacity 0.18s;
 }
 .ailcl-error-boundary__btn:hover { opacity: 0.85; }
 
-/* ─── Config warning ─────────────────────────────────────────────────── */
+/* ─── Config warning ─────────────────────────────────────────────── */
 .ailcl-config-warning {
   padding:       14px 18px;
-  background:    var(--ailcl-warning-bg, #fffbeb);
-  border:        1px dashed var(--ailcl-warning-border, #fcd34d);
-  border-radius: var(--ailcl-radius-sm, 10px);
-  color:         var(--ailcl-warning-text, #92400e);
+  background:    #fffbeb;
+  border:        1px dashed #fcd34d;
+  border-radius: var(--ailcl-radius-sm, 12px);
+  color:         #92400e;
   font-family:   var(--ailcl-font);
   font-size:     14px;
 }
 
-/* ─── Focus visible ring (accessibility) ────────────────────────────── */
+/* ─── Focus ring ─────────────────────────────────────────────────── */
 [data-widget="ailcl"] *:focus-visible {
   outline:        2px solid var(--ailcl-primary);
   outline-offset: 2px;
+  border-radius:  2px;
 }
