@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useAutoScroll } from '../../hooks/useAutoScroll';
 import MessageList                from '../MessageList/MessageList';
 import ChatInput                  from '../ChatInput/ChatInput';
 import ArtifactPanel              from '../ArtifactPanel/ArtifactPanel';
@@ -37,6 +38,14 @@ const ChatContainer = ({
     messages, isLoading, error,
     sendMessage, cancelRequest, clearChat, clearError, loadHistory,
   } = useChat({ apiUrl, s3Config });
+
+  // ── Auto scroll ─────────────────────────────────────────────────────────
+  const lastMsg   = messages[messages.length - 1];
+  const scrollDep = `${messages.length}-${lastMsg?.content?.length ?? 0}-${isLoading}`;
+  const { containerRef: messagesRef } = useAutoScroll({
+    enabled:    autoScroll,
+    dependency: scrollDep,
+  });
 
   const toggleTheme = useCallback(() => {
     setIsDark((prev) => {
@@ -200,14 +209,13 @@ const ChatContainer = ({
           )}
 
           {/* Messages */}
-          <main className={styles.messages}>
+          <main ref={messagesRef} className={styles.messages}>
             <MessageList
               messages={messages}
               isLoading={isLoading}
               showCopyButton={showCopyButton}
               allowMarkdown={allowMarkdown}
               enableTypingAnimation={enableTypingAnimation}
-              autoScroll={autoScroll}
               onSuggestion={handleSuggestion}
               onOpenArtifact={handleOpenArtifact}
             />

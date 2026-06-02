@@ -1,7 +1,6 @@
 import { memo }           from 'react';
 import MessageBubble      from '../MessageBubble/MessageBubble';
 import TypingIndicator    from '../TypingIndicator/TypingIndicator';
-import { useAutoScroll }  from '../../hooks/useAutoScroll';
 import styles             from './MessageList.module.css';
 
 const SUGGESTIONS = [
@@ -17,18 +16,11 @@ const MessageList = memo(({
   showCopyButton,
   allowMarkdown,
   enableTypingAnimation,
-  autoScroll,
   onSuggestion,
-  onOpenArtifact,        // ← receives from ChatContainer
+  onOpenArtifact,
 }) => {
-  const { containerRef } = useAutoScroll({
-    enabled:    autoScroll,
-    dependency: `${messages.length}-${isLoading}`,
-  });
-
   return (
     <div
-      ref={containerRef}
       className={styles.list}
       role="log"
       aria-live="polite"
