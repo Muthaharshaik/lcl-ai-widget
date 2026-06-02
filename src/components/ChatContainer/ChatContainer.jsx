@@ -141,6 +141,18 @@ const ChatContainer = ({
     sendMessage({ text, files: [], commandType: null, onArtifactEvent: handleArtifactEvent });
   }, [sendMessage, handleArtifactEvent]);
 
+  // ── Regenerate — re-sends the last user message with its original commandType ──
+  const handleRegenerate = useCallback(() => {
+    if (isLoading) return;
+    // Find the last user message
+    const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
+    if (!lastUserMsg) return;
+    const text = typeof lastUserMsg.content === 'string' ? lastUserMsg.content : '';
+    // Use the commandType of the last artifact that was generated
+    const commandType = lastArtifactCommandType.current || null;
+    sendMessage({ text, files: lastUserMsg.files || [], commandType, onArtifactEvent: handleArtifactEvent });
+  }, [isLoading, messages, sendMessage, handleArtifactEvent]);
+
   // ── Reopen artifact from message bubble ───────────────────────────────────────
   const handleOpenArtifact = useCallback((artifactData) => {
     openArtifact(artifactData);
@@ -241,7 +253,9 @@ const ChatContainer = ({
           <ArtifactPanel
             artifact={artifact}
             isStreaming={isStreaming}
+            isLoading={isLoading}
             onClose={closeArtifact}
+            onRegenerate={handleRegenerate}
           />
         )}
       </div>

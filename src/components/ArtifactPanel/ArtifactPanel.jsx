@@ -16,7 +16,7 @@ import styles                                           from './ArtifactPanel.mo
  *  User clicks toggle → manually switch between code and preview
  *  User closes        → panel hides, artifact kept in state for reopen
  */
-const ArtifactPanel = ({ artifact, isStreaming, onClose }) => {
+const ArtifactPanel = ({ artifact, isStreaming, isLoading, onClose, onRegenerate }) => {
   const [view,           setView]           = useState('code');
   const [refreshKey,     setRefreshKey]     = useState(0);
   const [downloading,    setDownloading]    = useState(false);
@@ -119,12 +119,8 @@ const ArtifactPanel = ({ artifact, isStreaming, onClose }) => {
   };
 
   const handleRefresh = () => {
-    if (isDocx) {
-      generateDocxPreview(artifact.code);
-    } else {
-      setRefreshKey(k => k + 1);
-      setView('preview');
-    }
+    // Re-send the last user message to regenerate the artifact from scratch
+    onRegenerate?.();
   };
 
   if (!artifact) return null;
@@ -138,6 +134,7 @@ const ArtifactPanel = ({ artifact, isStreaming, onClose }) => {
         setView={handleViewChange}
         onRefresh={handleRefresh}
         onClose={onClose}
+        isLoading={isLoading}
         code={artifact.code}
         title={artifact.title}
         language={artifact.language || artifact.type || 'html'}

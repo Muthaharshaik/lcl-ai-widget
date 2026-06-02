@@ -5,7 +5,7 @@ import styles                     from './ArtifactPanel.module.css';
 const ArtifactToolbar = ({
   view, setView, onRefresh, onClose,
   code, title, language,
-  isStreaming,
+  isStreaming, isLoading,
   isDocx, isPptx, isDocument,
   onDownloadDocx, onDownloadPptx, downloading,
 }) => {
@@ -99,12 +99,12 @@ const ArtifactToolbar = ({
 
         <div className={styles.divider} />
 
-        {/* Refresh */}
+        {/* Refresh — regenerate artifact */}
         <button
           className={styles.iconBtn}
           onClick={onRefresh}
-          disabled={isStreaming}
-          title="Refresh"
+          disabled={isStreaming || isLoading}
+          title={isLoading ? 'Regenerating…' : 'Regenerate'}
         >
           <RefreshIcon />
         </button>
