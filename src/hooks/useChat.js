@@ -101,7 +101,8 @@ const chatReducer = (state, { type, payload }) => {
 export const useChat = ({ apiUrl, s3Config = {} }) => {
   const [state, dispatch]    = useReducer(chatReducer, initialState);
   const abortControllerRef   = useRef(null);
-  const streamingIdRef       = useRef(null); // mirror of state.streamingId for closures
+  const streamingIdRef       = useRef(null);
+  const userCancelledRef     = useRef(false); // flag-based stop (matches reference app) // mirror of state.streamingId for closures
 
   const sendMessage = useCallback(async ({
     text,
@@ -113,6 +114,7 @@ export const useChat = ({ apiUrl, s3Config = {} }) => {
     if ((!trimmed && files.length === 0 && !commandType) || state.isLoading) return;
 
     // Cancel any in-flight request
+    userCancelledRef.current = false;   // reset on new message
     abortControllerRef.current?.abort();
     abortControllerRef.current = new AbortController();
 
@@ -139,6 +141,7 @@ export const useChat = ({ apiUrl, s3Config = {} }) => {
 
       // Each chat token gets appended to the streaming message
       onToken: (token) => {
+        if (userCancelledRef.current) return; // stop button was clicked — ignore token
         dispatch({ type: A.APPEND_TOKEN, payload: token });
       },
 
@@ -157,14 +160,14 @@ export const useChat = ({ apiUrl, s3Config = {} }) => {
       },
 
       // Stream complete
-      onDone: (cleanChatText) => {
+      onDone: (cleanChatText, finalArtifact) => {
+        // If user cancelled, discard the response silently
+        if (userCancelledRef.current) { userCancelledRef.current = false; return; }
         dispatch({
           type:    A.FINISH_STREAM,
           payload: {
-            // Replace raw streaming content (which may include partial markers)
-            // with the clean chat text extracted from fullMessage
             finalContent: cleanChatText || undefined,
-            artifact:     artifactData,
+            artifact:     finalArtifact || artifactData,
           },
         });
         streamingIdRef.current = null;
@@ -191,6 +194,13 @@ export const useChat = ({ apiUrl, s3Config = {} }) => {
   }, [apiUrl, state.messages, state.isLoading]);
 
   const cancelRequest = useCallback(() => {
+    // Flag-based stop (matches reference app pattern):
+    // 1. Set flag so onToken/onDone callbacks are ignored immediately
+    // 2. Dispatch FINISH_STREAM right now so isLoading resets instantly
+    // 3. Also abort the fetch to cancel the network request
+    userCancelledRef.current = true;
+    dispatch({ type: A.FINISH_STREAM, payload: {} });
+    streamingIdRef.current = null;
     abortControllerRef.current?.abort();
   }, []);
 

@@ -87,7 +87,8 @@ const buildApiHistory = (messages) =>
         role:    m.role,
         content: [{ type: 'text', text }],
       };
-    });
+    })
+    .filter((m) => m.content[0]?.text?.trim().length > 0); // ← ADD THIS LINE
 
 // ─── AWS SigV4 helpers ────────────────────────────────────────────────────────
 async function sha256hex(message) {

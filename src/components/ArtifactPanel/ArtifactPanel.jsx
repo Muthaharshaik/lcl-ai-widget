@@ -69,8 +69,15 @@ const ArtifactPanel = ({ artifact, isStreaming, isLoading, onClose, onRegenerate
   // Documents always open straight to preview (matches reference app)
   useEffect(() => {
     if (artifact?.type === 'document') {
-      setView('preview');
-      setRefreshKey(k => k + 1);
+      // If the user asked for code (e.g. "fix my JSX") but Lambda wrapped it
+      // in an HTML document, default to code view so they see the raw code.
+      // Only use preview when they explicitly asked for an HTML page/document.
+      if (artifact?.requestedAs === 'code') {
+        setView('code');
+      } else {
+        setView('preview');
+        setRefreshKey(k => k + 1);
+      }
     }
   }, [artifact]);
 

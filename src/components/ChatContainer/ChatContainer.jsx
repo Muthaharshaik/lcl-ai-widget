@@ -27,6 +27,24 @@ const ChatContainer = ({
   });
   const theme = isDark ? 'dark' : 'light';
 
+  // ── Fullscreen ────────────────────────────────────────────────────────────────
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const containerRef = useRef(null);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen?.();
+    } else {
+      document.exitFullscreen?.();
+    }
+  }, []);
+
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
+
   // ── Sidebar collapsed state ───────────────────────────────────────────────
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -93,9 +111,6 @@ const ChatContainer = ({
   }, [sessions, loadHistory, closeArtifact]);
 
   // ── Pending command type ──────────────────────────────────────────────────────
-  // When the user sends /word, /doc, /ppt, /code and the AI asks a follow-up
-  // question (no artifact yet), we must re-send the same commandType with the
-  // user's reply — otherwise the Lambda receives null and defaults to HTML.
   const [pendingCommandType, setPendingCommandType] = useState(null);
 
   // Track the last successfully generated artifact type so follow-up messages
@@ -109,25 +124,40 @@ const ChatContainer = ({
     } else if (event.type === 'chunk') {
       updateArtifact({ code: event.code });
     } else if (event.type === 'done') {
-      // Store the artifact type for follow-up messages, then clear pending
+      // Capture what commandType was used BEFORE clearing pendingCommandType
+      const usedCommandType = pendingCommandType || lastArtifactCommandType.current;
+
       if (event.artifact?.type) {
         const typeToCommand = { pptx: 'ppt', docx: 'word', document: 'doc', html: 'code' };
         lastArtifactCommandType.current = typeToCommand[event.artifact.type] || null;
       }
       setPendingCommandType(null);
-      finishArtifactStream(event.artifact);
+
+      // ── Derive a meaningful filename from the last user message ───────────
+      const lastUserMsg  = messages.filter((m) => m.role === 'user').pop();
+      const rawText      = typeof lastUserMsg?.content === 'string'
+        ? lastUserMsg.content : '';
+      const derivedTitle = rawText
+        .slice(0, 60)
+        .replace(/[^\w\s-]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        || event.artifact?.title
+        || 'Document';
+
+      finishArtifactStream({
+        ...event.artifact,
+        title:       derivedTitle,
+        requestedAs: usedCommandType,
+      });
     }
-  }, [startArtifactStream, updateArtifact, finishArtifactStream]);
+  }, [startArtifactStream, updateArtifact, finishArtifactStream, pendingCommandType, messages]);
 
   // ── Send ─────────────────────────────────────────────────────────────────────
   const handleSend = useCallback(({ text, files, commandType }) => {
-    // Priority: explicit slash command > pending pre-artifact follow-up
-    // NOTE: lastArtifactCommandType is intentionally NOT used for plain text messages.
-    // When a user types a correction ("fix the layout", "add more slides"), sending
-    // commandType:'ppt' causes the Lambda to generate a brand-new presentation
-    // instead of modifying the existing one. The history already contains the
-    // previous artifact code, which gives the Lambda enough context.
-    const effectiveCommandType = commandType || pendingCommandType || null;
+    const lastCmd      = lastArtifactCommandType.current;
+    const codeFollowUp = lastCmd === 'code' ? 'code' : null;
+    const effectiveCommandType = commandType || pendingCommandType || codeFollowUp || null;
 
     if (commandType) {
       setPendingCommandType(commandType);
@@ -141,14 +171,19 @@ const ChatContainer = ({
     sendMessage({ text, files: [], commandType: null, onArtifactEvent: handleArtifactEvent });
   }, [sendMessage, handleArtifactEvent]);
 
-  // ── Regenerate — re-sends the last user message with its original commandType ──
+  // ── Cancel ───────────────────────────────────────────────────────────────────
+  const handleCancel = useCallback(() => {
+    cancelRequest();
+    setPendingCommandType(null);
+    lastArtifactCommandType.current = null;
+  }, [cancelRequest]);
+
+  // ── Regenerate ───────────────────────────────────────────────────────────────
   const handleRegenerate = useCallback(() => {
     if (isLoading) return;
-    // Find the last user message
     const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
     if (!lastUserMsg) return;
     const text = typeof lastUserMsg.content === 'string' ? lastUserMsg.content : '';
-    // Use the commandType of the last artifact that was generated
     const commandType = lastArtifactCommandType.current || null;
     sendMessage({ text, files: lastUserMsg.files || [], commandType, onArtifactEvent: handleArtifactEvent });
   }, [isLoading, messages, sendMessage, handleArtifactEvent]);
@@ -160,6 +195,7 @@ const ChatContainer = ({
 
   return (
     <div
+      ref={containerRef}
       className={`${styles.container} ailcl-theme-${theme}`}
       style={{ '--chat-max-height': maxHeight }}
       data-widget="ailcl"
@@ -198,6 +234,18 @@ const ChatContainer = ({
             </div>
 
             <div className={styles.headerRight}>
+              {/* Fullscreen toggle */}
+              <button
+                className={styles.themeToggle}
+                onClick={toggleFullscreen}
+                title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+                aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+                type="button"
+              >
+                {isFullscreen ? <ExitFullscreenIcon /> : <FullscreenIcon />}
+              </button>
+
+              {/* Theme toggle */}
               <button
                 className={styles.themeToggle}
                 onClick={toggleTheme}
@@ -237,7 +285,7 @@ const ChatContainer = ({
           <footer className={styles.footer}>
             <ChatInput
               onSend={handleSend}
-              onCancel={cancelRequest}
+              onCancel={handleCancel}
               isLoading={isLoading}
               disabled={disabled}
               placeholder={placeholder}
@@ -306,6 +354,26 @@ const TrashIcon = () => (
     <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
     <path d="M10 11v6M14 11v6"/>
     <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+  </svg>
+);
+
+const FullscreenIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M8 3H5a2 2 0 0 0-2 2v3"/>
+    <path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
+    <path d="M3 16v3a2 2 0 0 0 2 2h3"/>
+    <path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
+  </svg>
+);
+
+const ExitFullscreenIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M8 3v3a2 2 0 0 1-2 2H3"/>
+    <path d="M21 8h-3a2 2 0 0 1-2-2V3"/>
+    <path d="M3 16h3a2 2 0 0 1 2 2v3"/>
+    <path d="M16 21v-3a2 2 0 0 1 2-2h3"/>
   </svg>
 );
 

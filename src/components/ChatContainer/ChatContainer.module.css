@@ -280,3 +280,15 @@
   overflow:       hidden;
   text-overflow:  ellipsis;
 }
+
+/* ── Fullscreen ───────────────────────────────────────────────────── */
+/* When the browser enters fullscreen, override the fixed height so
+   the widget fills the entire screen instead of staying at 600px */
+.container:fullscreen,
+.container:-webkit-full-screen,
+.container:-moz-full-screen {
+  height:     100vh !important;
+  max-height: 100vh !important;
+  border-radius: 0;
+  border: none;
+}

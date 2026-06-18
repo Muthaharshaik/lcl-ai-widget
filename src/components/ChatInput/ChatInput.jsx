@@ -6,13 +6,94 @@ import styles            from './ChatInput.module.css';
 const MAX_TEXTAREA_HEIGHT = 180;
 
 // ── Auto-detect commandType from message text ─────────────────────────────────
-// Slash commands are removed — users describe what they want naturally.
-// These patterns map plain-language requests to the Lambda's commandType.
+//
+// PRIORITY ORDER — first match wins:
+//   1. PPT  — explicit presentation keywords
+//   2. Word — explicit document keywords
+//   3. Doc  — HTML page/document keywords
+//   4. Code — everything code-related (widest net, goes last so it doesn't
+//              accidentally absorb PPT/Word/Doc requests)
+//
+// CODE detection covers:
+//   • Creation:  "build a React component", "write a Python function"
+//   • Operations: "fix/debug/refactor/review/optimise this code"
+//   • Language mentions: JavaScript, TypeScript, Python, React, JSX…
+//   • File-type mentions: .jsx, .tsx, .js, .ts, .py, .css, .html, .json…
+//   • Pasted code signals: backtick blocks, import/export/const/function keywords
+//   • Compound phrases: "my code", "this code", "the function", "this component"
+// ─────────────────────────────────────────────────────────────────────────────
 const COMMAND_DETECTORS = [
-  { pattern: /\b(powerpoint|presentation|slide deck|pptx?|slides)\b/i,            commandType: 'ppt'  },
-  { pattern: /\b(word document|docx?|\.docx|ms word|word file|word doc)\b/i,       commandType: 'word' },
-  { pattern: /\b(html (page|document|file)|web page|webpage|website)\b/i,          commandType: 'doc'  },
-  { pattern: /\b(build|create|make|write|generate)\s.*(app|tool|game|component|calculator|dashboard|widget|chart)\b/i, commandType: 'code' },
+  // ── 1. PPT ──────────────────────────────────────────────────────────────────
+  {
+    pattern: /\b(powerpoint|presentation|slide\s*deck|pptx?|slides)\b/i,
+    commandType: 'ppt',
+  },
+  // Modification follow-ups for PPT
+  {
+    pattern: /\b(fix|update|change|modify|add|remove|edit|correct|adjust)\b.{0,50}\b(slide|ppt|presentation|layout|alignment|kpi|dashboard)\b/i,
+    commandType: 'ppt',
+  },
+
+  // ── 2. Word document ────────────────────────────────────────────────────────
+  {
+    pattern: /\b(word\s*doc(ument)?|docx?|\.docx|ms\s*word|word\s*file)\b/i,
+    commandType: 'word',
+  },
+
+  // ── 3. HTML page / web document ─────────────────────────────────────────────
+  {
+    pattern: /\b(html\s*(page|document|file)|web\s*page|webpage|website)\b/i,
+    commandType: 'doc',
+  },
+
+  // ── 4a. Code — explicit creation verbs + code nouns ─────────────────────────
+  {
+    pattern: /\b(build|create|make|write|generate|develop|implement|code)\b.{0,60}\b(app|tool|game|component|function|class|module|script|hook|api|endpoint|algorithm|snippet|program|feature|page|form|button|modal|navbar|sidebar|table|chart|graph|animation|effect|utility|helper|service|handler|middleware|schema|query|mutation|resolver|route|controller|model|interface|type)\b/i,
+    commandType: 'code',
+  },
+
+  // ── 4b. Code — fix/debug/review/refactor operations ─────────────────────────
+  {
+    pattern: /\b(fix|debug|refactor|review|optimis[ez]|improve|clean\s*up|update|rewrite|convert|migrate|test|add\s*(a\s+)?(feature|functionality|support|test|types?|prop|method|handler|logic|validation|error\s*handling|loading|state|effect|hook|class|style))\b.{0,60}\b(code|function|component|class|script|hook|module|file|snippet|bug|error|issue|problem|test|type|prop|method|logic|style|import|export|variable|constant|array|object|interface|enum|decorator)\b/i,
+    commandType: 'code',
+  },
+
+  // ── 4c. Code — "fix this / fix my / fix the" (short follow-ups) ─────────────
+  {
+    pattern: /\b(fix|debug|check|review|help\s+with|look\s+at|explain|understand|what('?s|\s+is)\s+wrong\s+with)\b.{0,30}\b(this|my|the|above|following)\b.{0,30}\b(code|function|component|class|script|hook|file|snippet|error|bug|issue)\b/i,
+    commandType: 'code',
+  },
+
+  // ── 4d. Code — programming language / framework mentions ────────────────────
+  {
+    pattern: /\b(javascript|typescript|python|java|c#|c\+\+|rust|go\b|ruby|php|swift|kotlin|dart|scala|r\b|matlab|bash|shell|sql|graphql|react|vue|angular|svelte|next\.?js|nuxt|express|fastapi|django|flask|spring|node\.?js|deno|bun|tailwind|css|sass|scss|less|html5?|jsx|tsx|json|yaml|toml|xml)\b/i,
+    commandType: 'code',
+  },
+
+  // ── 4e. Code — file extension mentions ──────────────────────────────────────
+  {
+    pattern: /\.(jsx?|tsx?|py|cs|cpp|java|rb|php|swift|kt|dart|go|rs|sh|bash|sql|graphql|html|css|scss|sass|less|json|yaml|yml|toml|env|config|test|spec)\b/i,
+    commandType: 'code',
+  },
+
+  // ── 4f. Code — pasted code signals (backtick blocks, code-like keywords) ────
+  //   Detects when the message itself contains actual code being pasted
+  {
+    pattern: /(`{1,3}[\s\S]*`{1,3}|^\s*(import|export|const|let|var|function|class|async|await|return|if\s*\(|for\s*\(|while\s*\(|switch\s*\(|=>|@|#include|def\s+\w|public\s+(class|void|static)|package\s+\w))/m,
+    commandType: 'code',
+  },
+
+  // ── 4g. Code — "add X to my/the code/component" short follow-ups ────────────
+  {
+    pattern: /\b(add|remove|change|update|rename|move|replace|delete)\b.{0,40}\b(to|in|from|inside|the|my|this)\b.{0,40}\b(code|component|function|class|file|hook|module|page|form|button|style|type|interface|prop|state|variable|import|export|dependency|package)\b/i,
+    commandType: 'code',
+  },
+
+  // ── 4h. Code — general "this code / my code / the code" references ───────────
+  {
+    pattern: /\b(this|my|the|above|following|given|provided)\b.{0,20}\b(code|component|function|class|script|hook|snippet|implementation|solution)\b/i,
+    commandType: 'code',
+  },
 ];
 
 function detectCommandType(text) {
@@ -74,7 +155,7 @@ const ChatInput = ({
 
   return (
     <div
-      className={`${styles.area} ${isDisabled ? styles.areaDisabled : ''}`}
+      className={`${styles.area} ${disabled ? styles.areaDisabled : ''}`}
       onDrop={allowFileUpload ? handleDrop : undefined}
       onDragOver={allowFileUpload ? (e) => e.preventDefault() : undefined}
     >
