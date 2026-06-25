@@ -1,16 +1,16 @@
-import { createElement } from 'react';
+import { createElement, useRef, useEffect } from 'react';
 import ChatContainer  from './components/ChatContainer/ChatContainer';
 import ErrorBoundary  from './components/ErrorBoundary/ErrorBoundary';
 import './ui/AILCL.css';
-
+ 
 const AILCL = (props) => {
   const {
     // API — now a Mendix attribute (not a hardcoded string)
     apiUrl,
-
+ 
     // S3 upload config — all Mendix attributes (never hardcoded)
     s3Bucket, s3Region, s3KeyPrefix, awsAccessKey, awsSecretKey,
-
+ 
     // UI
     title                 = 'LCL-AI Assistant',
     placeholder           = 'Ask me anything…',
@@ -24,16 +24,18 @@ const AILCL = (props) => {
     acceptedFileTypes     = '.pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.csv,.xlsx',
     maxFileSizeMB         = 10,
     autoScroll            = true,
-
+ 
     // Session history
     showSidebar           = false,
     chatHistoryJson,
     onHistoryChange,
+    onShareSession,
+    sharedSessionId,
   } = props;
-
+ 
   // Read the API URL from the Mendix attribute value
   const resolvedApiUrl = apiUrl?.value ?? '';
-
+ 
   if (!resolvedApiUrl) {
     return (
       <div className="ailcl-config-warning">
@@ -41,7 +43,7 @@ const AILCL = (props) => {
       </div>
     );
   }
-
+ 
   // Read S3 config values from Mendix attributes
   const s3Config = {
     bucket:    s3Bucket?.value    ?? '',
@@ -50,7 +52,32 @@ const AILCL = (props) => {
     accessKey: awsAccessKey?.value ?? '',
     secretKey: awsSecretKey?.value ?? '',
   };
+ 
+  const pendingShareRef = useRef(null);
 
+  const handleShareSession = (sessionId) => {
+    pendingShareRef.current = sessionId; // always overwrite, even if same id
+
+    if (sharedSessionId?.status === 'available') {
+      // Force a change — clear first, then set
+      sharedSessionId.setValue('');
+      setTimeout(() => {
+        sharedSessionId.setValue(sessionId);
+      }, 50);
+    }
+  };
+
+  useEffect(() => {
+    if (!pendingShareRef.current) return;
+    if (sharedSessionId?.status !== 'available') return;
+    if (sharedSessionId.value === pendingShareRef.current) {
+      pendingShareRef.current = null;
+      if (onShareSession?.canExecute && !onShareSession.isExecuting) {
+        onShareSession.execute();
+      }
+    }
+  }, [sharedSessionId?.value]);
+ 
   return (
     <ErrorBoundary>
       <ChatContainer
@@ -71,9 +98,10 @@ const AILCL = (props) => {
         showSidebar={showSidebar}
         chatHistoryJson={chatHistoryJson}
         onHistoryChange={onHistoryChange}
+        onShareSession={handleShareSession}
       />
     </ErrorBoundary>
   );
 };
-
+ 
 export default AILCL;

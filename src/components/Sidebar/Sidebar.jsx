@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, memo } from 'react';
 import styles from './Sidebar.module.css';
-
+ 
 // ─── Date grouping helpers ────────────────────────────────────────────────────
 function getGroup(isoDate) {
   if (!isoDate) return 'Earlier';
@@ -8,16 +8,16 @@ function getGroup(isoDate) {
   const now   = new Date();
   const diffMs = now - d;
   const days  = diffMs / 86_400_000;
-
+ 
   if (days < 1)   return 'Today';
   if (days < 2)   return 'Yesterday';
   if (days < 7)   return 'Last 7 Days';
   if (days < 30)  return 'Last 30 Days';
   return 'Earlier';
 }
-
+ 
 const GROUP_ORDER = ['Today', 'Yesterday', 'Last 7 Days', 'Last 30 Days', 'Earlier'];
-
+ 
 function groupSessions(sessions) {
   const groups = {};
   for (const s of sessions) {
@@ -27,24 +27,24 @@ function groupSessions(sessions) {
   }
   return groups;
 }
-
+ 
 // ─── Session item ─────────────────────────────────────────────────────────────
 const SessionItem = memo(function SessionItem({
-  session, isActive, onSelect, onDelete, onRename,
+  session, isActive, onSelect, onDelete, onRename, onShare,
 }) {
   const [editing,   setEditing]   = useState(false);
   const [editTitle, setEditTitle] = useState(session.title);
   const inputRef = useRef(null);
-
+ 
   useEffect(() => {
     if (editing) inputRef.current?.select();
   }, [editing]);
-
+ 
   const commitRename = () => {
     setEditing(false);
     onRename(session.id, editTitle || session.title);
   };
-
+ 
   return (
     <div
       className={`${styles.sessionItem} ${isActive ? styles.sessionItemActive : ''}`}
@@ -57,7 +57,7 @@ const SessionItem = memo(function SessionItem({
             fill="currentColor" opacity="0.7"/>
         </svg>
       </span>
-
+ 
       {editing ? (
         <input
           ref={inputRef}
@@ -74,8 +74,22 @@ const SessionItem = memo(function SessionItem({
       ) : (
         <span className={styles.sessionTitle}>{session.title || 'New Chat'}</span>
       )}
-
+ 
       <div className={styles.sessionActions} onClick={e => e.stopPropagation()}>
+         <button
+          className={styles.sessionBtn}
+          title="Share"
+          onClick={() => onShare && onShare(session.id)}
+        >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+          strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="18" cy="5" r="3"/>
+          <circle cx="6" cy="12" r="3"/>
+          <circle cx="18" cy="19" r="3"/>
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+        </svg>
+        </button>
         <button
           className={styles.sessionBtn}
           title="Rename"
@@ -99,7 +113,7 @@ const SessionItem = memo(function SessionItem({
     </div>
   );
 });
-
+ 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 export default function Sidebar({
   sessions        = [],
@@ -108,15 +122,16 @@ export default function Sidebar({
   onSelectSession,
   onDeleteSession,
   onRenameSession,
+  onShareSession,
   collapsed,
   onToggleCollapse,
   theme,
 }) {
   const groups = groupSessions(sessions);
-
+ 
   return (
     <aside className={`${styles.sidebar} ${collapsed ? styles.collapsed : ''}`}>
-
+ 
       {/* ── Top bar ── */}
       <div className={styles.sidebarTop}>
         {!collapsed && (
@@ -134,7 +149,7 @@ export default function Sidebar({
           )}
         </button>
       </div>
-
+ 
       {!collapsed && (
         <>
           {/* ── New chat button ── */}
@@ -144,7 +159,7 @@ export default function Sidebar({
             </svg>
             New Chat
           </button>
-
+ 
           {/* ── Session list ── */}
           <div className={styles.sessionList}>
             {sessions.length === 0 ? (
@@ -161,6 +176,7 @@ export default function Sidebar({
                       onSelect={onSelectSession}
                       onDelete={onDeleteSession}
                       onRename={onRenameSession}
+                      onShare={onShareSession}
                     />
                   ))}
                 </div>

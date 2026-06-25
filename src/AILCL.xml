@@ -7,7 +7,7 @@
     <description>AI Chat Widget</description>
     <icon/>
     <properties>
-
+ 
         <!-- ═══════════════════════════════════════════════════════════
              API CONFIGURATION
         ═══════════════════════════════════════════════════════════ -->
@@ -62,7 +62,7 @@
         </property>
  
         </propertyGroup>
-
+ 
         <propertyGroup caption="UI Configuration">
         <property key="title" type="string" required="false" defaultValue="AI Assistant">
             <caption>Widget Title</caption>
@@ -81,7 +81,7 @@
             <description>Start in dark mode by default (user can toggle in UI)</description>
         </property>
         </propertyGroup>
-
+ 
         <propertyGroup caption="Features">
         <property key="allowMarkdown" type="boolean" defaultValue="true">
             <caption>Render Markdown</caption>
@@ -109,7 +109,7 @@
             <description>Maximum file size per attachment</description>
         </property>
         </propertyGroup>
-
+ 
         <propertyGroup caption="Behaviour">
         <property key="disabled" type="boolean" defaultValue="false">
             <caption>Disabled</caption>
@@ -128,7 +128,7 @@
                     Requires chatHistoryJson and onHistoryChange to be configured.
                 </description>
             </property>
-    
+   
             <property key="chatHistoryJson" type="attribute" required="false">
                 <caption>Chat History JSON</caption>
                 <description>
@@ -138,14 +138,27 @@
                     <attributeType name="String"/>
                 </attributeTypes>
             </property>
-    
+   
             <property key="onHistoryChange" type="action" required="false">
                 <caption>On History Change</caption>
                 <description>
                     Action that is called whenever the chat history changes (e.g. new message, new session).
                 </description>
            </property>
+ 
+           <property key="onShareSession" type="action" required="false">
+               <caption>On Share Session</caption>
+               <description> Microflow called when the user clicks the Share button on a chat session.</description>
+           </property>
+ 
+            <property key="sharedSessionId" type="attribute" required="false">
+                    <caption>Shared Session ID</caption>
+                    <description>String attribute the widget sets to the session ID before calling the On Share Session microflow</description>
+                    <attributeTypes>
+                        <attributeType name="String"/>
+                    </attributeTypes>
+            </property>
         </propertyGroup>
-
+ 
     </properties>
 </widget>
