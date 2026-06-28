@@ -11,38 +11,43 @@ const FilePreview = ({ files, onRemove, readOnly = false }) => {
 
   return (
     <div className={styles.row}>
-      {files.map((file) => (
-        <FileChip key={file.name} file={file} onRemove={onRemove} readOnly={readOnly} />
+      {files.map((file, index) => (
+        <FileChip key={file.name || file.fileName || index} file={file} onRemove={onRemove} readOnly={readOnly} />
       ))}
     </div>
   );
 };
 
 const FileChip = ({ file, onRemove, readOnly }) => {
-  // Blob URL for image thumbnails — cleaned up on unmount by browser GC
+  // Handle both raw File object and S3 ref
+  const fileName = file.fileName || file.name || 'Unknown file';
+  const fileSize = file.size ? formatFileSize(file.size) : null;
+  const isImage  = file.type?.startsWith('image/') || file.mimeType?.startsWith('image/');
+
+  // Blob URL only works for raw File objects, not S3 refs
   const thumbUrl = useMemo(
-    () => (isImageFile(file) ? URL.createObjectURL(file) : null),
-    [file]
+    () => (isImage && file instanceof File ? URL.createObjectURL(file) : null),
+    [file, isImage]
   );
 
   return (
     <div className={styles.chip}>
       {thumbUrl ? (
-        <img src={thumbUrl} alt={file.name} className={styles.thumb} />
+        <img src={thumbUrl} alt={fileName} className={styles.thumb} />
       ) : (
-        <span className={styles.icon} aria-hidden="true">{getFileIcon(file.name)}</span>
+        <span className={styles.icon} aria-hidden="true">{getFileIcon(fileName)}</span>
       )}
       <div className={styles.info}>
-        <span className={styles.name} title={file.name}>
-          {file.name.length > 22 ? `${file.name.slice(0, 19)}…` : file.name}
+        <span className={styles.name} title={fileName}>
+          {fileName.length > 22 ? `${fileName.slice(0, 19)}…` : fileName}
         </span>
-        <span className={styles.size}>{formatFileSize(file.size)}</span>
+        {fileSize && <span className={styles.size}>{fileSize}</span>}
       </div>
       {!readOnly && (
         <button
           className={styles.remove}
-          onClick={() => onRemove(file.name)}
-          aria-label={`Remove ${file.name}`}
+          onClick={() => onRemove(fileName)}
+          aria-label={`Remove ${fileName}`}
           type="button"
         >
           ×

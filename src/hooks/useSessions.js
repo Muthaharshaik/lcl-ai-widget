@@ -34,6 +34,7 @@ function serializeMessage(m) {
     role:     m.role,
     content:  typeof m.content === 'string' ? m.content : '',
     status:   m.status,
+    timestamp: m.timestamp, 
     artifact: m.artifact
       ? {
           type:     m.artifact.type,
@@ -42,6 +43,15 @@ function serializeMessage(m) {
           language: m.artifact.language,
         }
       : null,
+    files: Array.isArray(m.files)
+      ? m.files
+          .filter(f => f?.s3Key)  // only save S3 refs, not raw File objects
+          .map(f => ({
+            s3Key:    f.s3Key,
+            fileName: f.fileName,
+            mimeType: f.mimeType,
+          }))
+      : [],
   };
 }
 

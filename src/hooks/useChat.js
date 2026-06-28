@@ -13,6 +13,7 @@ const A = {
   CLEAR_ERROR:     'CLEAR_ERROR',
   CLEAR_CHAT:      'CLEAR_CHAT',
   LOAD_HISTORY:    'LOAD_HISTORY',   // replace messages when switching sessions
+  UPDATE_USER_FILES: 'UPDATE_USER_FILES',
 };
 
 // ─── Reducer ──────────────────────────────────────────────────────────────────
@@ -89,6 +90,17 @@ const chatReducer = (state, { type, payload }) => {
     case A.LOAD_HISTORY:
       return { ...initialState, messages: payload || [] };
 
+    // ADD to reducer
+    case A.UPDATE_USER_FILES:
+      return {
+        ...state,
+        messages: state.messages.map((m) =>
+          m.id === payload.messageId
+            ? { ...m, files: payload.files }
+            : m
+        ),
+      };
+
     default:
       return state;
   }
@@ -160,18 +172,26 @@ export const useChat = ({ apiUrl, s3Config = {} }) => {
       },
 
       // Stream complete
-      onDone: (cleanChatText, finalArtifact) => {
-        // If user cancelled, discard the response silently
-        if (userCancelledRef.current) { userCancelledRef.current = false; return; }
+    onDone: (cleanChatText, finalArtifact, s3Attachments) => {
+      if (userCancelledRef.current) { userCancelledRef.current = false; return; }
+      
+      // Update userMsg files with S3 keys instead of raw File objects
+      if (s3Attachments?.length > 0) {
         dispatch({
-          type:    A.FINISH_STREAM,
-          payload: {
-            finalContent: cleanChatText || undefined,
-            artifact:     finalArtifact || artifactData,
-          },
+          type: A.UPDATE_USER_FILES,
+          payload: { messageId: userMsg.id, files: s3Attachments }
         });
-        streamingIdRef.current = null;
-      },
+      }
+
+      dispatch({
+        type:    A.FINISH_STREAM,
+        payload: {
+          finalContent: cleanChatText || undefined,
+          artifact:     finalArtifact || artifactData,
+        },
+      });
+      streamingIdRef.current = null;
+    },
 
       // Error
       onError: (err) => {

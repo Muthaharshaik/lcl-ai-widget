@@ -489,7 +489,7 @@ export const streamChatMessage = async ({
             // chunk.fullMessage always has the full Lambda response.
             const finalArtifact = extractArtifactFromMessage(finalMsg) || artifactResult;
 
-            onDone?.(cleanChat, finalArtifact);
+            onDone?.(cleanChat, finalArtifact, s3Attachments);
             return;
 
           } else if (chunk.error) {
@@ -514,7 +514,7 @@ export const streamChatMessage = async ({
   // Stream ended without a done event — flush and call onDone
   parser.flush();
   const cleanChat = extractChatText(fullMsg) || chatTextAccum.trim();
-  onDone?.(cleanChat, artifactResult);
+  onDone?.(cleanChat, artifactResult, s3Attachments);
 };
 
 // ─── Strip artifact markers from chat text ────────────────────────────────────
