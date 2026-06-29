@@ -110,7 +110,7 @@ const chatReducer = (state, { type, payload }) => {
 /**
  * @param {{ apiUrl: string }} options
  */
-export const useChat = ({ apiUrl, s3Config = {} }) => {
+export const useChat = ({ apiUrl, s3Config = {}, userEmail = '' }) => {
   const [state, dispatch]    = useReducer(chatReducer, initialState);
   const abortControllerRef   = useRef(null);
   const streamingIdRef       = useRef(null);
@@ -145,6 +145,7 @@ export const useChat = ({ apiUrl, s3Config = {} }) => {
     await streamChatMessage({
       apiUrl,
       s3Config,
+      userEmail,
       message:     trimmed,
       history:     historySlice,
       files,

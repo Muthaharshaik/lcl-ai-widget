@@ -369,6 +369,7 @@ class ArtifactStreamParser {
 export const streamChatMessage = async ({
   apiUrl,
   s3Config = {},
+  userEmail = '',
   message,
   history     = [],
   files       = [],
@@ -401,10 +402,12 @@ export const streamChatMessage = async ({
     message,
     history:     buildApiHistory(history),
     commandType: commandType || null,
+    ...(userEmail && { userEmail: userEmail }),
     ...(s3Attachments.length > 0 && { attachments: s3Attachments }),
   };
 
   debugLog('Sending:', { message, historyLen: payload.history.length, commandType });
+  console.info('Payload being sent:', JSON.stringify(payload));
 
   let response;
   try {

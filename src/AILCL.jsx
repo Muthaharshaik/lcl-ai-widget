@@ -31,6 +31,7 @@ const AILCL = (props) => {
     onHistoryChange,
     onShareSession,
     sharedSessionId,
+    userEmail,
   } = props;
  
   // Read the API URL from the Mendix attribute value
@@ -52,6 +53,8 @@ const AILCL = (props) => {
     accessKey: awsAccessKey?.value ?? '',
     secretKey: awsSecretKey?.value ?? '',
   };
+
+  const currentUserEmail = userEmail?.value ?? '';
  
   const pendingShareRef = useRef(null);
 
@@ -99,6 +102,7 @@ const AILCL = (props) => {
         chatHistoryJson={chatHistoryJson}
         onHistoryChange={onHistoryChange}
         onShareSession={handleShareSession}
+        userEmail={currentUserEmail}
       />
     </ErrorBoundary>
   );

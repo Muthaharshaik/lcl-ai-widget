@@ -158,6 +158,12 @@
                         <attributeType name="String"/>
                     </attributeTypes>
             </property>
+
+            <property key="userEmail" type="expression" required="false">
+                <caption>User Email</caption>
+                <description>Current user email sent with API requests for usage trackings.</description>
+                <returnType type="String"/>
+            </property>
         </propertyGroup>
  
     </properties>

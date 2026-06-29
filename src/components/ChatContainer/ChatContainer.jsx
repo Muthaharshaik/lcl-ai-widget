@@ -18,6 +18,7 @@ const ChatContainer = ({
   chatHistoryJson, onHistoryChange, showSidebar = false,  onShareSession,
   // ── S3 upload config (from Mendix attributes) ────────────────────
   s3Config = {},
+  userEmail = '',
 }) => {
  
   // ── Theme ────────────────────────────────────────────────────────────────────
@@ -56,7 +57,7 @@ const ChatContainer = ({
   const {
     messages, isLoading, error,
     sendMessage, cancelRequest, clearChat, clearError, loadHistory,
-  } = useChat({ apiUrl, s3Config });
+  } = useChat({ apiUrl, s3Config, userEmail });
  
   // ── Auto scroll ─────────────────────────────────────────────────────────
   const lastMsg   = messages[messages.length - 1];
