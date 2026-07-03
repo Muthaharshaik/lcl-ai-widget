@@ -20,7 +20,7 @@ const FilePreview = ({ files, onRemove, readOnly = false }) => {
 
 const FileChip = ({ file, onRemove, readOnly }) => {
   // Handle both raw File object and S3 ref
-  const fileName = file.fileName || file.name || 'Unknown file';
+  const fileName = file.originalName || file.fileName || file.name || 'Unknown file';
   const fileSize = file.size ? formatFileSize(file.size) : null;
   const isImage  = file.type?.startsWith('image/') || file.mimeType?.startsWith('image/');
 

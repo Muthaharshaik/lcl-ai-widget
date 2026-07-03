@@ -117,15 +117,27 @@ async function hmacSha256hex(keyData, message) {
 }
 
 function sanitizeFileName(fileName) {
-  const lastDot  = fileName.lastIndexOf('.');
-  const ext      = lastDot > -1 ? fileName.slice(lastDot) : '';
-  const baseName = lastDot > -1 ? fileName.slice(0, lastDot) : fileName;
-  return baseName
+  // ← ADD THESE TWO LINES: decode %20, %2D etc. before anything else
+  try { fileName = decodeURIComponent(fileName); }
+  catch { /* malformed encoding — proceed with original */ }
+
+  const lastDot = fileName.lastIndexOf('.');
+  const ext     = lastDot > 0 ? fileName.slice(lastDot).toLowerCase() : '';
+  let baseName  = lastDot > 0 ? fileName.slice(0, lastDot) : fileName;
+
+  baseName = baseName
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-zA-Z0-9._-]/g, '-')
-    .replace(/-{2,}/g, '-')
-    .replace(/^-|-$/g, '') + ext;
+    .replace(/[._]+/g, '-')
+    .replace(/[^a-zA-Z0-9\-\[\]() ]/g, '')
+    .replace(/\s+/g, ' ')
+    .replace(/-+/g, '-')
+    .trim()
+    .replace(/^[-\s]+|[-\s]+$/g, '');
+
+  if (!baseName) baseName = 'file';   // ← guard against fully-nuked names
+
+  return baseName + ext;
 }
 
 function sigV4EncodeUri(s3Key) {
@@ -183,14 +195,21 @@ async function uploadFileToS3(file, s3Config) {
   });
 
   debugLog('S3 upload success:', s3Key);
-  return s3Key;
+  return { s3Key, safeFileName };
 }
 
 async function uploadAllFilesToS3(files, s3Config) {
   const attachments = [];
   for (const file of files) {
-    const s3Key = await uploadFileToS3(file, s3Config);
-    attachments.push({ s3Key, fileName: file.name, mimeType: file.type });
+    const { s3Key, safeFileName } = await uploadFileToS3(file, s3Config);
+
+    // ← derive safeFileName here the same way uploadFileToS3 does
+    attachments.push({
+      s3Key,
+      fileName:     safeFileName,   // ← Bedrock gets the clean name
+      originalName: file.name,      // ← UI shows what the user picked
+      mimeType:     file.type,
+    });
   }
   return attachments;
 }
