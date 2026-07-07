@@ -1,17 +1,18 @@
-import { useState, useEffect }                          from 'react';
-import ArtifactToolbar                                  from './ArtifactToolbar';
-import ArtifactPreview                                  from './ArtifactPreview';
-import ArtifactCodeView                                 from './ArtifactCodeView';
-import { generateAndDownloadDocx, generatePreviewHtml } from '../../utils/generateDocx';
-import { generateAndDownloadPptx }                      from '../../utils/generatePptx';
-import styles                                           from './ArtifactPanel.module.css';
-
+import { useState, useEffect }                        from 'react';
+import ArtifactToolbar                                from './ArtifactToolbar';
+import ArtifactPreview                                from './ArtifactPreview';
+import ArtifactCodeView                               from './ArtifactCodeView';
+import DocxPreview                                    from './DocxPreview';
+import { generateAndDownloadDocx, generateDocxBlob }  from '../../utils/generateDocx';
+import { generateAndDownloadPptx }                    from '../../utils/generatePptx';
+import styles                                         from './ArtifactPanel.module.css';
+ 
 /**
- * Artifact panel — mirrors reference app behavior exactly:
+ * Artifact panel:
  *
  *  While streaming    → code view, "Generating" badge in toolbar, no preview
  *  Streaming ends     → html/document auto-switch to preview
- *                       docx → auto-generate preview via mammoth
+ *                       docx → auto-generate REAL Word-like preview (docx-preview)
  *                       pptx → stay on code, user downloads
  *  User clicks toggle → manually switch between code and preview
  *  User closes        → panel hides, artifact kept in state for reopen
@@ -21,26 +22,26 @@ const ArtifactPanel = ({ artifact, isStreaming, isLoading, onClose, onRegenerate
   const [refreshKey,     setRefreshKey]     = useState(0);
   const [downloading,    setDownloading]    = useState(false);
   const [downloadError,  setDownloadError]  = useState(null);
-  const [previewHtml,    setPreviewHtml]    = useState(null);
+  const [previewBlob,    setPreviewBlob]    = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError,   setPreviewError]   = useState(null);
-
+ 
   const isDocx     = artifact?.type === 'docx';
   const isPptx     = artifact?.type === 'pptx';
   const isDocument = artifact?.type === 'document';
   const isHtml     = !isDocx && !isPptx;
-
+ 
   // While streaming: always show code
   useEffect(() => {
     if (isStreaming) setView('code');
   }, [isStreaming]);
-
+ 
   // When streaming finishes: auto-switch view
   useEffect(() => {
     if (isStreaming || !artifact?.code) return;
-
+ 
     if (isDocx) {
-      // Auto-generate word preview
+      // Auto-generate real Word-like preview
       generateDocxPreview(artifact.code);
       return;
     }
@@ -57,15 +58,15 @@ const ArtifactPanel = ({ artifact, isStreaming, isLoading, onClose, onRegenerate
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isStreaming, artifact?.code, artifact?.type]);
-
+ 
   // Reset preview state when artifact changes
   useEffect(() => {
-    setPreviewHtml(null);
+    setPreviewBlob(null);
     setPreviewError(null);
     setPreviewLoading(false);
     setDownloadError(null);
   }, [artifact?.code]);
-
+ 
   // Documents always open straight to preview (matches reference app)
   useEffect(() => {
     if (artifact?.type === 'document') {
@@ -80,35 +81,35 @@ const ArtifactPanel = ({ artifact, isStreaming, isLoading, onClose, onRegenerate
       }
     }
   }, [artifact]);
-
-  // ── Generate Word preview via mammoth ───────────────────────────────────────
+ 
+  // ── Generate real .docx blob for Word-like preview (docx-preview) ──────────
   const generateDocxPreview = async (code) => {
     setPreviewLoading(true);
     setPreviewError(null);
-    setPreviewHtml(null);
-    const result = await generatePreviewHtml(code);
+    setPreviewBlob(null);
+    const result = await generateDocxBlob(code);
     setPreviewLoading(false);
     if (result.success) {
-      setPreviewHtml(result.html);
+      setPreviewBlob(result.blob);
       setView('preview');
     } else {
       setPreviewError(result.error || 'Preview failed');
       setView('code');
     }
   };
-
+ 
   // ── View toggle handler ─────────────────────────────────────────────────────
   const handleViewChange = (v) => {
     setView(v);
     if (v === 'preview') {
-      if (isDocx && !previewHtml && !previewLoading) {
+      if (isDocx && !previewBlob && !previewLoading) {
         generateDocxPreview(artifact.code);
       } else if (!isDocx) {
         setRefreshKey(k => k + 1);
       }
     }
   };
-
+ 
   // ── Download handlers ───────────────────────────────────────────────────────
   const handleDownloadDocx = async () => {
     setDownloading(true);
@@ -117,24 +118,24 @@ const ArtifactPanel = ({ artifact, isStreaming, isLoading, onClose, onRegenerate
     setDownloading(false);
     if (!result.success) setDownloadError(result.error);
   };
-
+ 
   const handleDownloadPptx = async () => {
     setDownloading(true);
     const result = await generateAndDownloadPptx(artifact.code, artifact.title || 'Presentation');
     setDownloading(false);
     if (!result.success) setDownloadError(result.error);
   };
-
+ 
   const handleRefresh = () => {
     // Re-send the last user message to regenerate the artifact from scratch
     onRegenerate?.();
   };
-
+ 
   if (!artifact) return null;
-
+ 
   return (
     <div className={styles.panel}>
-
+ 
       {/* Toolbar */}
       <ArtifactToolbar
         view={view}
@@ -153,7 +154,7 @@ const ArtifactPanel = ({ artifact, isStreaming, isLoading, onClose, onRegenerate
         onDownloadPptx={handleDownloadPptx}
         downloading={downloading}
       />
-
+ 
       {/* Error bar */}
       {(downloadError || previewError) && (
         <div className={styles.errorBar}>
@@ -161,9 +162,9 @@ const ArtifactPanel = ({ artifact, isStreaming, isLoading, onClose, onRegenerate
           <button onClick={() => { setDownloadError(null); setPreviewError(null); }}>×</button>
         </div>
       )}
-
+ 
       <div className={styles.panelBody}>
-
+ 
         {/* ── DOCX: preview loading ────────────────────────────────────────── */}
         {isDocx && previewLoading && (
           <div className={styles.previewLoadingState}>
@@ -171,17 +172,17 @@ const ArtifactPanel = ({ artifact, isStreaming, isLoading, onClose, onRegenerate
             <p>Rendering document preview…</p>
           </div>
         )}
-
-        {/* ── DOCX: preview (mammoth-rendered HTML) ───────────────────────── */}
-        {isDocx && previewHtml && !previewLoading && view === 'preview' && (
-          <ArtifactPreview code={previewHtml} refreshKey={refreshKey} />
+ 
+        {/* ── DOCX: REAL Word-like preview (docx-preview) ─────────────────── */}
+        {isDocx && previewBlob && !previewLoading && view === 'preview' && (
+          <DocxPreview blob={previewBlob} />
         )}
-
+ 
         {/* ── DOCX: code view ─────────────────────────────────────────────── */}
         {isDocx && view === 'code' && !previewLoading && (
           <ArtifactCodeView code={artifact.code} language="javascript" isStreaming={isStreaming} />
         )}
-
+ 
         {/* ── PPTX: download note + code view ─────────────────────────────── */}
         {isPptx && (
           <>
@@ -201,7 +202,7 @@ const ArtifactPanel = ({ artifact, isStreaming, isLoading, onClose, onRegenerate
             )}
           </>
         )}
-
+ 
         {/* ── HTML app / HTML document ─────────────────────────────────────── */}
         {isHtml && !isPptx && !isDocx && (
           view === 'preview' && !isStreaming
@@ -216,5 +217,5 @@ const ArtifactPanel = ({ artifact, isStreaming, isLoading, onClose, onRegenerate
     </div>
   );
 };
-
+ 
 export default ArtifactPanel;

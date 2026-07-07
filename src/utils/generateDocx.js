@@ -1,21 +1,21 @@
 import * as docxLib from 'docx'
 import { saveAs } from 'file-saver'
 import * as mammoth from 'mammoth'
-
+ 
 export function extractDocxCode(fullContent) {
   const match = fullContent.match(/%%DOCX_CODE_START%%([\s\S]*?)%%DOCX_CODE_END%%/)
   return match ? match[1].trim() : null
 }
-
+ 
 function adaptCodeForBrowser(code) {
   if (!code) return ''
-
+ 
   // ── 1. Strip end marker and anything after it ─────────────────────────────
   // The artifact code sometimes includes %%DOCX_CODE_END%% and description text.
   // Strip everything from the marker onwards before execution.
   const endMarkerIdx = code.indexOf('%%DOCX_CODE_END%%')
   if (endMarkerIdx !== -1) code = code.slice(0, endMarkerIdx)
-
+ 
   // ── 2. Reference app fixes (exact copy) ──────────────────────────────────
   code = code.replace(
     /const\s*\{[^}]*\}\s*=\s*require\(['"]docx['"]\);?/gs,
@@ -25,40 +25,55 @@ function adaptCodeForBrowser(code) {
   code = code.replace(/const\s+fs\s*=\s*require\(['"]fs['"]\);?/g, '')
   code = code.replace(/fs\.writeFileSync\([^)]*\);?/g, '')
   code = code.replace(/Packer\.toBuffer\([\s\S]*?\}\);?/g, '')
-
+ 
   // ── 3. Fix unescaped apostrophes in single-quoted strings ─────────────────
   // "it's" → "it\'s"  (same fix as generatePptx.js)
   code = code.replace(/(\w)'(\w)/g, "$1\\'$2")
-
+ 
   return code.trim()
 }
-
+ 
 export async function executeDocxCode(code) {
   const adaptedCode = adaptCodeForBrowser(code)
   const context = { ...docxLib }
   const contextKeys = Object.keys(context)
   const contextValues = Object.values(context)
-
+ 
   const wrappedCode = `
     ${adaptedCode}
     return typeof doc !== 'undefined' ? doc : null;
   `
-
+ 
   const executeDoc = new Function(...contextKeys, wrappedCode)
   const doc = executeDoc(...contextValues)
-
+ 
   if (!doc) throw new Error('No doc object returned')
-
+ 
   return doc
 }
-
+ 
+// ── NEW: returns the raw .docx blob for real Word-like preview ──────────────
+// Used by DocxPreview.jsx (docx-preview library renders this blob as Word pages)
+export async function generateDocxBlob(code) {
+  try {
+    const doc = await executeDocxCode(code)
+    const blob = await docxLib.Packer.toBlob(doc)
+    return { success: true, blob }
+  } catch (error) {
+    console.error('generateDocxBlob error:', error)
+    return { success: false, error: error.message }
+  }
+}
+ 
+// ── KEPT (no longer used for docx preview, but preserved in case other
+//    files import it). Old mammoth → HTML conversion path. ──────────────────
 export async function generatePreviewHtml(code) {
   try {
     const doc = await executeDocxCode(code)
-
+ 
     const blob = await docxLib.Packer.toBlob(doc)
     const arrayBuffer = await blob.arrayBuffer()
-
+ 
     const result = await mammoth.convertToHtml(
       { arrayBuffer },
       {
@@ -69,7 +84,7 @@ export async function generatePreviewHtml(code) {
         ]
       }
     )
-
+ 
     const styledHtml = `<!DOCTYPE html>
 <html>
 <head>
@@ -96,15 +111,15 @@ export async function generatePreviewHtml(code) {
 <div class="page">${result.value}</div>
 </body>
 </html>`
-
+ 
     return { success: true, html: styledHtml }
-
+ 
   } catch (error) {
     console.error('generatePreviewHtml error:', error)
     return { success: false, error: error.message }
   }
 }
-
+ 
 export async function generateAndDownloadDocx(code, filename = 'LCL-AI-Document') {
   try {
     const doc = await executeDocxCode(code)
@@ -116,3 +131,4 @@ export async function generateAndDownloadDocx(code, filename = 'LCL-AI-Document'
     return { success: false, error: error.message }
   }
 }
+ 
