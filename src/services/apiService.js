@@ -510,8 +510,9 @@ export const streamChatMessage = async ({
             // where the SSE stream was truncated before %%PPT_CODE_END%% arrived.
             // chunk.fullMessage always has the full Lambda response.
             const finalArtifact = extractArtifactFromMessage(finalMsg) || artifactResult;
+            const metrics = chunk.metrics || null;
 
-            onDone?.(cleanChat, finalArtifact, s3Attachments);
+            onDone?.(cleanChat, finalArtifact, s3Attachments, metrics);
             return;
 
           } else if (chunk.error) {
@@ -536,7 +537,7 @@ export const streamChatMessage = async ({
   // Stream ended without a done event — flush and call onDone
   parser.flush();
   const cleanChat = extractChatText(fullMsg) || chatTextAccum.trim();
-  onDone?.(cleanChat, artifactResult, s3Attachments);
+  onDone?.(cleanChat, artifactResult, s3Attachments, null);
 };
 
 // ─── Strip artifact markers from chat text ────────────────────────────────────

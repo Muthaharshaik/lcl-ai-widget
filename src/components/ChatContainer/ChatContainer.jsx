@@ -8,6 +8,7 @@ import { useChat }                from '../../hooks/useChat';
 import { useArtifact }            from '../../hooks/useArtifact';
 import { useSessions }            from '../../hooks/useSessions';
 import styles                     from './ChatContainer.module.css';
+import Big                        from 'big.js';
  
 const ChatContainer = ({
   apiUrl, title, placeholder, maxHeight, defaultDark,
@@ -19,6 +20,7 @@ const ChatContainer = ({
   // ── S3 upload config (from Mendix attributes) ────────────────────
   s3Config = {},
   userEmail = '',
+  inputTokens, outputTokens, totalCost, onApiUsage,
 }) => {
  
   // ── Theme ────────────────────────────────────────────────────────────────────
@@ -39,6 +41,27 @@ const ChatContainer = ({
       document.exitFullscreen?.();
     }
   }, []);
+
+  const handleApiUsage = useCallback((metrics) => {
+  console.info(inputTokens);
+  console.info(outputTokens);
+  console.info(totalCost);
+
+  if (inputTokens?.status === 'available') inputTokens.setValue(new Big(metrics.inputTokens));
+  if (outputTokens?.status === 'available') outputTokens.setValue(new Big(metrics.outputTokens));
+  if (totalCost?.status === 'available') totalCost.setValue(new Big(metrics.totalCost));
+
+  
+  
+  setTimeout(() => {
+  console.info('onApiUsage:', onApiUsage);
+  console.info('canExecute:', onApiUsage?.canExecute);
+  console.info('isExecuting:', onApiUsage?.isExecuting);
+    if (onApiUsage?.canExecute && !onApiUsage.isExecuting) {
+      onApiUsage.execute();
+    }
+  }, 100);
+}, [inputTokens, outputTokens, totalCost, onApiUsage])
  
   useEffect(() => {
     const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
@@ -57,7 +80,7 @@ const ChatContainer = ({
   const {
     messages, isLoading, error,
     sendMessage, cancelRequest, clearChat, clearError, loadHistory,
-  } = useChat({ apiUrl, s3Config, userEmail });
+  } = useChat({ apiUrl, s3Config, userEmail, onUsage: handleApiUsage });
  
   // ── Auto scroll ─────────────────────────────────────────────────────────
   const lastMsg   = messages[messages.length - 1];

@@ -110,7 +110,7 @@ const chatReducer = (state, { type, payload }) => {
 /**
  * @param {{ apiUrl: string }} options
  */
-export const useChat = ({ apiUrl, s3Config = {}, userEmail = '' }) => {
+export const useChat = ({ apiUrl, s3Config = {}, userEmail = '', onUsage }) => {
   const [state, dispatch]    = useReducer(chatReducer, initialState);
   const abortControllerRef   = useRef(null);
   const streamingIdRef       = useRef(null);
@@ -173,8 +173,12 @@ export const useChat = ({ apiUrl, s3Config = {}, userEmail = '' }) => {
       },
 
       // Stream complete
-    onDone: (cleanChatText, finalArtifact, s3Attachments) => {
+    onDone: (cleanChatText, finalArtifact, s3Attachments, metrics) => {
       if (userCancelledRef.current) { userCancelledRef.current = false; return; }
+
+      if (metrics && onUsage) {
+        onUsage(metrics);
+      }
       
       // Update userMsg files with S3 keys instead of raw File objects
       if (s3Attachments?.length > 0) {

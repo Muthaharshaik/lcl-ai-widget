@@ -165,6 +165,33 @@
                 <returnType type="String"/>
             </property>
         </propertyGroup>
+
+        <propertyGroup caption="API Usage Tracking">
+            <property key="inputTokens" type="attribute" required="false">
+                <caption>Input Tokens</caption>
+                <description>Number of input tokens used in the last API request</description>
+                <attributeTypes><attributeType name="Integer"/></attributeTypes>
+            </property>
+
+            <property key="outputTokens" type="attribute" required="false">
+                <caption>Output Tokens</caption>
+                <description>Number of output tokens used in the last API request</description>
+                <attributeTypes><attributeType name="Integer"/></attributeTypes>
+            </property>
+
+            <property key="totalCost" type="attribute" required="false">
+                <caption>Total Cost</caption>
+                <description>Total cost of API requests</description>
+                <attributeTypes><attributeType name="Decimal"/></attributeTypes>
+            </property>
+
+            <property key="onApiUsage" type="action" required="false">
+                <caption>On API Usage</caption>
+                <description>Microflow called after each API response with token usage</description>
+            </property>
+        </propertyGroup>
+
+
  
     </properties>
 </widget>

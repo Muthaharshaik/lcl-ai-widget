@@ -32,6 +32,7 @@ const AILCL = (props) => {
     onShareSession,
     sharedSessionId,
     userEmail,
+    inputTokens, outputTokens, totalCost, onApiUsage,
   } = props;
  
   // Read the API URL from the Mendix attribute value
@@ -103,6 +104,10 @@ const AILCL = (props) => {
         onHistoryChange={onHistoryChange}
         onShareSession={handleShareSession}
         userEmail={currentUserEmail}
+        inputTokens={inputTokens}
+        outputTokens={outputTokens}
+        totalCost={totalCost}
+        onApiUsage={onApiUsage}
       />
     </ErrorBoundary>
   );
