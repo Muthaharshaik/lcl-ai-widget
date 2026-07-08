@@ -410,3 +410,40 @@
   transition:  color var(--ailcl-transition);
 }
 .activeCmdClear:hover { color: var(--ailcl-error); }
+
+/* ── Mic button ───────────────────────────────────────────────────── */
+.micBtn {
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  width:           32px;
+  height:          32px;
+  border:          none;
+  border-radius:   var(--ailcl-radius-xs);
+  background:      transparent;
+  color:           var(--ailcl-text-muted);
+  cursor:          pointer;
+  flex-shrink:     0;
+  transition:      all var(--ailcl-transition);
+}
+.micBtn svg { width: 18px; height: 18px; }
+.micBtn:hover {
+  background: var(--ailcl-primary-light);
+  color:      var(--ailcl-primary);
+  transform:  scale(1.08);
+}
+
+/* ── Mic active (recording) ───────────────────────────────────────── */
+.micBtnActive {
+  background: rgba(220, 38, 38, 0.1) !important;
+  color:      #dc2626 !important;
+  animation:  micPulse 1.2s ease-in-out infinite;
+}
+.micBtnActive:hover {
+  background: rgba(220, 38, 38, 0.2) !important;
+}
+
+@keyframes micPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.25); }
+  50%       { box-shadow: 0 0 0 5px rgba(220, 38, 38, 0); }
+}

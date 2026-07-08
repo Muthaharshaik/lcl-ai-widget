@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import FilePreview       from '../FilePreview/FilePreview';
 import { useFileUpload } from '../../hooks/useFileUpload';
 import styles            from './ChatInput.module.css';
+import { useVoiceInput } from '../../hooks/useVoiceInput';
 
 const MAX_TEXTAREA_HEIGHT = 180;
 
@@ -118,6 +119,10 @@ const ChatInput = ({
     addFiles, removeFile, clearFiles, clearErrors,
   } = useFileUpload({ acceptedFileTypes, maxFileSizeMB });
 
+  const { isListening, startListening, stopListening } = useVoiceInput({
+    onTranscript: (text) => setInputValue(text),
+  })
+
   const autoResize = useCallback(() => {
     const el = textareaRef.current;
     if (!el) return;
@@ -198,6 +203,17 @@ const ChatInput = ({
           </>
         )}
 
+        {/* Mic button */}
+        <button
+          className={`${styles.micBtn} ${isListening ? styles.micBtnActive : ''}`}
+          onClick={isListening ? stopListening : startListening}
+          title={isListening ? 'Stop recording' : 'Voice input'}
+          type="button"
+          disabled={isDisabled}
+        >
+          {isListening ? <MicOffIcon /> : <MicIcon />}
+        </button>
+
         <textarea
           ref={textareaRef}
           value={inputValue}
@@ -248,5 +264,23 @@ const ChatInput = ({
 const SendIcon   = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>;
 const StopIcon   = () => <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg>;
 const AttachIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>;
+const MicIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+    strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+    <line x1="12" y1="19" x2="12" y2="23"/>
+    <line x1="8" y1="23" x2="16" y2="23"/>
+  </svg>
+);
+const MicOffIcon = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor"
+    strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+    <path d="M19 10v2a7 7 0 0 1-14 0v-2" fill="none" stroke="currentColor" strokeWidth="2"/>
+    <line x1="12" y1="19" x2="12" y2="23" stroke="currentColor" strokeWidth="2"/>
+    <line x1="8" y1="23" x2="16" y2="23" stroke="currentColor" strokeWidth="2"/>
+  </svg>
+);
 
 export default ChatInput;
