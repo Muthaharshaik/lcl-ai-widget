@@ -28,7 +28,7 @@ export const useVoiceInput = ({ onTranscript }) => {
 
             recognition.continuous = false;
             recognition.interimResults = true;
-            recognition.lang = "en-IN";
+            recognition.lang = document.documentElement.lang || navigator.language || "en-US";
 
             recognition.onresult = (event) => {
                 const transcript = Array.from(event.results)

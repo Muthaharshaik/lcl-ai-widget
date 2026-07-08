@@ -19,6 +19,9 @@ const MessageList = memo(({
   onSuggestion,
   onOpenArtifact,
 }) => {
+  const lastMessage = messages[messages.length - 1];
+  const isStreamingEmpty = lastMessage?.role === 'assistant' && 
+                         lastMessage?.content === '';
   return (
     <div
       className={styles.list}
@@ -40,7 +43,7 @@ const MessageList = memo(({
         />
       ))}
 
-      {isLoading && enableTypingAnimation && <TypingIndicator />}
+      {isLoading && enableTypingAnimation && isStreamingEmpty && <TypingIndicator />}
       <div aria-hidden="true" style={{ height: 4 }} />
     </div>
   );
