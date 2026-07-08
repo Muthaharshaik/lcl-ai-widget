@@ -130,6 +130,50 @@ const ChatInput = ({
     el.style.height = `${Math.min(el.scrollHeight, MAX_TEXTAREA_HEIGHT)}px`;
   }, []);
 
+
+const handlePaste = useCallback((e) => {
+    if (!allowFileUpload) return;
+
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    const imageFiles = [];
+
+    for (const item of items) {
+        if (!item.type.startsWith("image/")) continue;
+
+        const file = item.getAsFile();
+        if (!file) continue;
+
+        const extension = file.type.split("/")[1] || "png";
+
+        const timestamp = new Date()
+            .toISOString()
+            .replace(/[:.]/g, "-");
+
+        const renamedFile = new File(
+            [file],
+            `pasted-image-${timestamp}.${extension}`,
+            {
+                type: file.type,
+                lastModified: Date.now()
+            }
+        );
+
+        imageFiles.push(renamedFile);
+    }
+
+    if (imageFiles.length === 0) return;
+
+    // Prevent the browser from inserting the image into the textarea.
+    e.preventDefault();
+
+    addFiles(imageFiles);
+
+    // Keep focus in the textarea so the user can continue typing.
+    textareaRef.current?.focus();
+}, [allowFileUpload, addFiles]);
+
   const doSend = useCallback(() => {
     const text = inputValue.trim();
     const hasContent = text.length > 0 || stagedFiles.length > 0;
@@ -220,6 +264,7 @@ const ChatInput = ({
           onChange={(e) => { setInputValue(e.target.value); autoResize(); }}
           onKeyDown={handleKeyDown}
           onInput={autoResize}
+          onPaste={handlePaste} 
           className={styles.textarea}
           placeholder={isLoading ? 'Waiting for response…' : placeholder}
           disabled={isDisabled}
