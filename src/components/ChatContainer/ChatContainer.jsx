@@ -85,7 +85,7 @@ const ChatContainer = ({
   // ── Auto scroll ─────────────────────────────────────────────────────────
   const lastMsg   = messages[messages.length - 1];
   const scrollDep = `${messages.length}-${lastMsg?.content?.length ?? 0}-${isLoading}`;
-  const { containerRef: messagesRef } = useAutoScroll({
+  const { containerRef: messagesRef, scrollToBottom, isAtBottom } = useAutoScroll({
     enabled:    autoScroll,
     dependency: scrollDep,
   });
@@ -306,6 +306,17 @@ const ChatContainer = ({
               onOpenArtifact={handleOpenArtifact}
             />
           </main>
+
+          {!isAtBottom && (
+            <button
+              className={styles.scrollBottomBtn}
+              onClick={() => scrollToBottom()}
+              aria-label="Scroll to bottom"
+              type="button"
+            >
+              <ScrollDownIcon />
+            </button>
+          )}
  
           {/* Input */}
           {!isReadOnly && (
@@ -402,6 +413,14 @@ const ExitFullscreenIcon = () => (
     <path d="M21 8h-3a2 2 0 0 1-2-2V3"/>
     <path d="M3 16h3a2 2 0 0 1 2 2v3"/>
     <path d="M16 21v-3a2 2 0 0 1 2-2h3"/>
+  </svg>
+);
+
+const ScrollDownIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+    strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <line x1="12" y1="5" x2="12" y2="19"/>
+    <polyline points="19 12 12 19 5 12"/>
   </svg>
 );
  

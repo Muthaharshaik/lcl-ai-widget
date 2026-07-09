@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 
 /**
  * Scrolls a container to the bottom whenever `dependency` changes.
@@ -10,6 +10,7 @@ import { useEffect, useRef, useCallback } from 'react';
 export const useAutoScroll = ({ enabled = true, dependency }) => {
   const containerRef        = useRef(null);
   const userScrolledUpRef   = useRef(false);
+  const [isAtBottom, setIsAtBottom] = useState(true);
 
   // Track whether the user has scrolled away from the bottom
   useEffect(() => {
@@ -19,6 +20,7 @@ export const useAutoScroll = ({ enabled = true, dependency }) => {
     const onScroll = () => {
       const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
       userScrolledUpRef.current = distFromBottom > 80;
+      setIsAtBottom(distFromBottom <= 80); 
     };
 
     el.addEventListener('scroll', onScroll, { passive: true });
@@ -42,5 +44,5 @@ export const useAutoScroll = ({ enabled = true, dependency }) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dependency, enabled]);
 
-  return { containerRef, scrollToBottom };
+  return { containerRef, scrollToBottom, isAtBottom };
 };
