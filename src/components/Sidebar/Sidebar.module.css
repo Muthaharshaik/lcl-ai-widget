@@ -97,7 +97,7 @@
   overflow-x: hidden;
   padding:    0 6px 12px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.1) transparent;
+  scrollbar-color: #ededed transparent;
 }
 
 .sessionList::-webkit-scrollbar       { width: 4px; }

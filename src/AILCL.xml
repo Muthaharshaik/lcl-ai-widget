@@ -185,6 +185,12 @@
                 <attributeTypes><attributeType name="Decimal"/></attributeTypes>
             </property>
 
+            <property key="responseTimeMs" type="attribute" required="false">
+                <caption>Response Time (ms)</caption>
+                <description>Response time of the last API request in milliseconds</description>
+                <attributeTypes><attributeType name="Integer"/></attributeTypes>
+            </property>
+            
             <property key="onApiUsage" type="action" required="false">
                 <caption>On API Usage</caption>
                 <description>Microflow called after each API response with token usage</description>

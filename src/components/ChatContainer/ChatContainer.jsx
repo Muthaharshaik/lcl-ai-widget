@@ -20,7 +20,7 @@ const ChatContainer = ({
   // ── S3 upload config (from Mendix attributes) ────────────────────
   s3Config = {},
   userEmail = '',
-  inputTokens, outputTokens, totalCost, onApiUsage,
+  inputTokens, outputTokens, totalCost, responseTimeMs, onApiUsage,
 }) => {
  
   // ── Theme ────────────────────────────────────────────────────────────────────
@@ -50,6 +50,7 @@ const ChatContainer = ({
   if (inputTokens?.status === 'available') inputTokens.setValue(new Big(metrics.inputTokens));
   if (outputTokens?.status === 'available') outputTokens.setValue(new Big(metrics.outputTokens));
   if (totalCost?.status === 'available') totalCost.setValue(new Big(metrics.totalCost));
+  if (responseTimeMs?.status === 'available') responseTimeMs.setValue(new Big(metrics.responseTimeMs));
 
   
   
@@ -61,7 +62,7 @@ const ChatContainer = ({
       onApiUsage.execute();
     }
   }, 100);
-}, [inputTokens, outputTokens, totalCost, onApiUsage])
+}, [inputTokens, outputTokens, totalCost,responseTimeMs, onApiUsage])
  
   useEffect(() => {
     const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
