@@ -21,7 +21,7 @@ const AILCL = (props) => {
     showCopyButton        = true,
     enableTypingAnimation = true,
     allowFileUpload       = false,
-    acceptedFileTypes     = '.pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.csv,.xlsx',
+    acceptedFileTypes     = '.pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.csv,.xlsx,.zip,.html,.svg,.mp4,.mov',
     maxFileSizeMB         = 10,
     autoScroll            = true,
  

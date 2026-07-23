@@ -51,6 +51,11 @@ export const getFileIcon = (fileName) => {
     zip: '🗜', rar: '🗜', '7z': '🗜',
     json: '📋', xml: '📋',
     mp4: '🎬', mp3: '🎵',
+    zip: '🗜', rar: '🗜',
+    html: '🌐',           // ← ADD
+    svg: '🎨',            // ← ADD
+    mp4: '🎬', mov: '🎬', // ← ADD
+    avi: '🎬',            // ← ADD
   };
   return map[ext] || '📎';
 };
