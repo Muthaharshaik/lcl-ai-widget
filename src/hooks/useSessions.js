@@ -37,10 +37,15 @@ function serializeMessage(m) {
     timestamp: m.timestamp, 
     artifact: m.artifact
       ? {
-          type:     m.artifact.type,
-          title:    m.artifact.title,
-          code:     m.artifact.code,
-          language: m.artifact.language,
+          type:        m.artifact.type,
+          title:       m.artifact.title,
+          code:        m.artifact.code,
+          language:    m.artifact.language,
+          // Public S3 URL returned by the API alongside the artifact.
+          // Undefined for older messages / responses without a URL — that's fine,
+          // JSON.stringify drops undefined keys and the toolbar hides the
+          // "Copy link" button when the field is missing.
+          artifactUrl: m.artifact.artifactUrl,
         }
       : null,
     files: Array.isArray(m.files)

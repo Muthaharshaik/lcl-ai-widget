@@ -146,6 +146,7 @@ const ArtifactPanel = ({ artifact, isStreaming, isLoading, onClose, onRegenerate
         code={artifact.code}
         title={artifact.title}
         language={artifact.language || artifact.type || 'html'}
+        artifactUrl={artifact.artifactUrl}
         isStreaming={isStreaming}
         isDocx={isDocx}
         isPptx={isPptx}

@@ -4,31 +4,46 @@ import styles                     from './ArtifactPanel.module.css';
 
 const ArtifactToolbar = ({
   view, setView, onRefresh, onClose,
-  code, title, language,
+  code, title, language, artifactUrl,
   isStreaming, isLoading,
   isDocx, isPptx, isDocument,
   onDownloadDocx, onDownloadPptx, downloading,
 }) => {
   const [copied,       setCopied]       = useState(false);
+  const [linkCopied,   setLinkCopied]   = useState(false);
   const [showDownload, setShowDownload] = useState(false);
 
   const isHtml = !isDocx && !isPptx;
 
-  const handleCopy = useCallback(async () => {
+  // Small helper — write to clipboard with a fallback for older browsers
+  // and for Mendix apps served over http (where the async clipboard API
+  // is blocked by browsers as a non-secure-context feature).
+  const writeToClipboard = async (text) => {
     try {
-      await navigator.clipboard.writeText(code || '');
+      await navigator.clipboard.writeText(text || '');
     } catch {
       const ta = document.createElement('textarea');
-      ta.value = code || '';
+      ta.value = text || '';
       ta.style.cssText = 'position:fixed;opacity:0';
       document.body.appendChild(ta);
       ta.select();
       document.execCommand('copy');
       document.body.removeChild(ta);
     }
+  };
+
+  const handleCopy = useCallback(async () => {
+    await writeToClipboard(code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }, [code]);
+
+  const handleCopyLink = useCallback(async () => {
+    if (!artifactUrl) return;
+    await writeToClipboard(artifactUrl);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  }, [artifactUrl]);
 
   const downloadHTML = useCallback(() => {
     const blob = new Blob([code], { type: 'text/html' });
@@ -118,6 +133,20 @@ const ArtifactToolbar = ({
             title="Open in new tab"
           >
             <ExternalIcon />
+          </button>
+        )}
+
+        {/* Copy shareable link — shown only when the API returned a URL
+            for this artifact. Works for html/document today and will
+            work for any future type the API adds a URL to. */}
+        {artifactUrl && !isStreaming && (
+          <button
+            className={`${styles.iconBtn} ${linkCopied ? styles.iconBtnSuccess : ''}`}
+            onClick={handleCopyLink}
+            title={linkCopied ? 'Link copied!' : 'Copy shareable link'}
+            aria-label="Copy shareable link"
+          >
+            {linkCopied ? <CheckIcon /> : <LinkIcon />}
           </button>
         )}
 
@@ -232,6 +261,7 @@ const CodeIcon     = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentC
 const RefreshIcon  = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>;
 const ExternalIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>;
 const CopyIcon     = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>;
+const LinkIcon     = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>;
 const CheckIcon    = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>;
 const DownloadIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>;
 const CloseIcon    = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;

@@ -510,6 +510,15 @@ export const streamChatMessage = async ({
             // where the SSE stream was truncated before %%PPT_CODE_END%% arrived.
             // chunk.fullMessage always has the full Lambda response.
             const finalArtifact = extractArtifactFromMessage(finalMsg) || artifactResult;
+
+            // Attach the API-provided shareable URL (public S3 link) to the
+            // artifact so the toolbar can offer a "Copy link" action.
+            // The URL rides along with the message from here on and is
+            // persisted with the session in chatHistoryJson.
+            if (finalArtifact && chunk.artifactUrl) {
+              finalArtifact.artifactUrl = chunk.artifactUrl;
+            }
+
             const metrics = chunk.metrics || null;
 
             onDone?.(cleanChat, finalArtifact, s3Attachments, metrics);
